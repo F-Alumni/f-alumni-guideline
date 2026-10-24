@@ -178,14 +178,22 @@ Toàn bộ quy chuẩn và đặc tả chi tiết của dự án được lưu t
    - Phân tích rủi ro Dual-Write và giải pháp Transactional Outbox Pattern cho Microservices.
    - Hướng dẫn thực hành dự án mẫu độc lập tại [`examples/kafka-demo/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/kafka-demo/).
 
-8. 📙 [**Tài liệu 14 — Quy chuẩn Git & Quy trình Làm việc Nhóm (Team Workflow & Git Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md):
+8. ⚡ [**Tài liệu 09 — Quy chuẩn Giao tiếp Đồng bộ gRPC & Tra cứu Hồ sơ (Chat-to-User gRPC Profile Lookup)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/09-grpc.md):
+   - Phân tích kiến trúc tại sao dùng gRPC (HTTP/2 + Protobuf) cho giao tiếp nội bộ thay vì REST.
+   - Lý do Web Portal và Mobile App không gọi gRPC trực tiếp (Ranh giới bảo mật & hạn chế trình duyệt).
+   - Định nghĩa hợp đồng Protobuf v1 tại [`contracts/grpc/user-profile/v1/user_profile.proto`](file:///c:/Use/University/PRN232/ASM/guideline/contracts/grpc/user-profile/v1/user_profile.proto) (`GetUserSummary`).
+   - Nguyên tắc đóng gói dữ liệu tối thiểu (`userId`, `displayName`, `avatarUrl`, `status`) và cấm rò rỉ dữ liệu nhạy cảm.
+   - Xử lý lỗi chuẩn RFC 7807 (`ProblemDetails`) từ `RpcException` (NotFound 404, Unavailable 503, DeadlineExceeded 504).
+   - Hướng dẫn chạy thử nghiệm dự án mẫu độc lập tại [`examples/grpc-demo/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/grpc-demo/).
+
+9. 📙 [**Tài liệu 14 — Quy chuẩn Git & Quy trình Làm việc Nhóm (Team Workflow & Git Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md):
    - Quy chuẩn đặt tên Multi-Repository (`f-alumni-*`).
    - Phân công quyền sở hữu mã nguồn chính (Primary Owner) và người duyệt chéo (Reviewer).
    - Chiến lược phân nhánh tinh gọn: `main`, `develop`, `feat/<ticket>-<name>`, `fix/<ticket>-<name>`.
    - Quy trình phối hợp thay đổi Hợp đồng API (Contract Change) và Breaking Changes.
    - Hướng dẫn chi tiết từng bước cho người mới và Mẫu Pull Request chuẩn.
 
-9. 🤝 [**Hướng dẫn Đóng góp (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
+10. 🤝 [**Hướng dẫn Đóng góp (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
    - Quy tắc chung dành cho thành viên khi tham gia đóng góp mã nguồn cho các repository trong tổ chức F-Alumni.
 
 ---
