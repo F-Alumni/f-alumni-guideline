@@ -151,14 +151,26 @@ Toàn bộ quy chuẩn và đặc tả chi tiết của dự án được lưu t
    - Quy chuẩn đặt tên C# (.NET 10), xử lý ngoại lệ tập trung qua Middleware (RFC 7807), logging và health checks.
    - Hướng dẫn sao chép và đổi tên template tại `templates/dotnet-service/` cho các service mới.
 
-4. 📙 [**Tài liệu 14 — Quy chuẩn Git & Quy trình Làm việc Nhóm (Team Workflow & Git Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md):
+4. 💾 [**Tài liệu 05 — Quy chuẩn Cơ sở Dữ liệu & EF Core (Database & EF Core Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/05-database.md):
+   - Nguyên tắc Database-per-Service trên 1 instance SQL Server (`FAlumni_*_Db`).
+   - Nghiêm cấm chia sẻ DbContext, cấm cross-database query và cấm foreign key liên database.
+   - Quy định tham chiếu dữ liệu qua Scalar ID hoặc contract (gRPC/Kafka).
+   - Quản lý EF Core Migrations cho môi trường Local Dev vs Deployment (Idempotent SQL Scripts).
+
+5. 🌐 [**Tài liệu 06 — Quy chuẩn Thiết kế REST API & OpenAPI (REST API & Contract Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/06-rest-api.md):
+   - Quy chuẩn định tuyến URL `/api/v1/{resources}`, phương thức HTTP và mã trạng thái chuẩn.
+   - Định dạng phản hồi lỗi chuẩn RFC 7807 (`ProblemDetails`) kèm `traceId`.
+   - Tiêu chuẩn phân trang (`PagedResponse<T>`), tìm kiếm và sắp xếp.
+   - Chuẩn hóa tài liệu OpenAPI / Swagger qua XML comments và attributes.
+
+6. 📙 [**Tài liệu 14 — Quy chuẩn Git & Quy trình Làm việc Nhóm (Team Workflow & Git Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md):
    - Quy chuẩn đặt tên Multi-Repository (`f-alumni-*`).
    - Phân công quyền sở hữu mã nguồn chính (Primary Owner) và người duyệt chéo (Reviewer).
    - Chiến lược phân nhánh tinh gọn: `main`, `develop`, `feat/<ticket>-<name>`, `fix/<ticket>-<name>`.
    - Quy trình phối hợp thay đổi Hợp đồng API (Contract Change) và Breaking Changes.
    - Hướng dẫn chi tiết từng bước cho người mới và Mẫu Pull Request chuẩn.
 
-5. 🤝 [**Hướng dẫn Đóng góp (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
+7. 🤝 [**Hướng dẫn Đóng góp (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
    - Quy tắc chung dành cho thành viên khi tham gia đóng góp mã nguồn cho các repository trong tổ chức F-Alumni.
 
 ---

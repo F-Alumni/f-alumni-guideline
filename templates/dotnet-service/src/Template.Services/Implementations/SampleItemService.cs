@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Template.Repositories.Entities;
 using Template.Repositories.Interfaces;
+using Template.Services.DTOs.Common;
 using Template.Services.DTOs.Requests;
 using Template.Services.DTOs.Responses;
 using Template.Services.Exceptions;
@@ -31,6 +32,23 @@ public class SampleItemService : ISampleItemService
         return items.Select(MapToResponse).ToList();
     }
 
+    public async Task<PagedResponse<SampleItemResponse>> GetPagedAsync(
+        string? search,
+        int pageNumber = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        if (pageNumber < 1) pageNumber = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
+
+        _logger.LogInformation("Retrieving paged sample items. Search: '{Search}', Page: {Page}, Size: {Size}", search, pageNumber, pageSize);
+        var (items, totalCount) = await _repository.GetPagedAsync(search, pageNumber, pageSize, cancellationToken);
+        var responseItems = items.Select(MapToResponse).ToList();
+
+        return new PagedResponse<SampleItemResponse>(responseItems, totalCount, pageNumber, pageSize);
+    }
+
     public async Task<SampleItemResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Retrieving sample item by ID: {ItemId}", id);
@@ -55,7 +73,7 @@ public class SampleItemService : ISampleItemService
         {
             Id = Guid.NewGuid(),
             Name = request.Name.Trim(),
-            Description = request.Description.Trim(),
+            Description = request.Description?.Trim() ?? string.Empty,
             IsActive = true,
             CreatedAtUtc = DateTime.UtcNow
         };
@@ -69,15 +87,14 @@ public class SampleItemService : ISampleItemService
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Deleting sample item with ID: {ItemId}", id);
-        var existing = await _repository.GetByIdAsync(id, cancellationToken);
+        var deleted = await _repository.DeleteAsync(id, cancellationToken);
 
-        if (existing is null)
+        if (!deleted)
         {
             _logger.LogWarning("Cannot delete: Sample item {ItemId} not found.", id);
             throw new NotFoundException(nameof(SampleItem), id);
         }
 
-        await _repository.DeleteAsync(id, cancellationToken);
         _logger.LogInformation("Sample item {ItemId} deleted successfully.", id);
     }
 

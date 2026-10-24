@@ -1,3 +1,4 @@
+using Template.Services.DTOs.Common;
 using Template.Services.DTOs.Requests;
 using Template.Services.DTOs.Responses;
 
@@ -9,6 +10,7 @@ namespace Template.Services.Interfaces;
 public interface ISampleItemService
 {
     Task<IReadOnlyList<SampleItemResponse>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<PagedResponse<SampleItemResponse>> GetPagedAsync(string? search, int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default);
     Task<SampleItemResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<SampleItemResponse> CreateAsync(CreateSampleItemRequest request, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);

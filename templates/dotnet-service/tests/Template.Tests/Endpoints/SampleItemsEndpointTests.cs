@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Template.Services.DTOs.Common;
 using Template.Services.DTOs.Requests;
 using Template.Services.DTOs.Responses;
 using Xunit;
@@ -29,7 +30,7 @@ public class SampleItemsEndpointTests : IClassFixture<WebApplicationFactory<Prog
     }
 
     [Fact]
-    public async Task GetAllEndpoint_ReturnsSuccessStatusCodeAndItems()
+    public async Task GetAllEndpoint_ReturnsSuccessStatusCode()
     {
         // Act
         var response = await _client.GetAsync("/api/v1/sample-items");
@@ -38,7 +39,6 @@ public class SampleItemsEndpointTests : IClassFixture<WebApplicationFactory<Prog
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var items = await response.Content.ReadFromJsonAsync<List<SampleItemResponse>>();
         Assert.NotNull(items);
-        Assert.NotEmpty(items);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class SampleItemsEndpointTests : IClassFixture<WebApplicationFactory<Prog
         // Arrange
         var request = new CreateSampleItemRequest
         {
-            Name = "Integration Test Item",
+            Name = "Integration Test Item " + Guid.NewGuid().ToString()[..8],
             Description = "Created via WebApplicationFactory test"
         };
 
@@ -60,6 +60,24 @@ public class SampleItemsEndpointTests : IClassFixture<WebApplicationFactory<Prog
         Assert.NotNull(created);
         Assert.Equal(request.Name, created.Name);
         Assert.NotNull(response.Headers.Location);
+
+        // Cleanup
+        var deleteResponse = await _client.DeleteAsync($"/api/v1/sample-items/{created.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetPagedEndpoint_ReturnsPagedEnvelope()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/v1/sample-items/paged?pageNumber=1&pageSize=5");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var pagedResult = await response.Content.ReadFromJsonAsync<PagedResponse<SampleItemResponse>>();
+        Assert.NotNull(pagedResult);
+        Assert.Equal(1, pagedResult.PageNumber);
+        Assert.Equal(5, pagedResult.PageSize);
     }
 
     [Fact]

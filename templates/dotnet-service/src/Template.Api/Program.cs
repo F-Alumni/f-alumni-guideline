@@ -15,7 +15,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 
 // 3. Add Application Layer (Services & Repositories)
-builder.Services.AddApplicationServices();
+builder.Services.AddApplicationServices(builder.Configuration);
 
 var app = builder.Build();
 
