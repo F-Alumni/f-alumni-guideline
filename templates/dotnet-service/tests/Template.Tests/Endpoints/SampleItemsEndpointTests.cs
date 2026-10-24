@@ -16,7 +16,7 @@ namespace Template.Tests.Endpoints;
 public class SampleItemsEndpointTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;
-    private const string JwtSecret = "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!";
+    private const string JwtSecret = CustomWebApplicationFactory.TestJwtSecret;
     private const string JwtIssuer = "https://identity.falumni.local";
     private const string JwtAudience = "falumni-services";
 

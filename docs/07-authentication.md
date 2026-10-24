@@ -94,17 +94,73 @@ Token được cấp bởi User Service phải bao gồm đầy đủ các chu�
 
 1. **Thuật toán ký (Signing Algorithm)**:
    - Sử dụng **HMAC-SHA256 (HS256)** với khóa bí mật đối xứng (Symmetric Security Key).
-   - Khóa ký phải có độ dài tối thiểu 256 bits (32 bytes).
-2. **Cấu hình qua `appsettings.json` (Tuyệt đối không hardcode trong mã nguồn)**:
+   - Khóa ký phải có độ dài tối thiểu **256 bits (32 bytes)**.
+
+2. **Cấu hình trong `appsettings.json` (Tuyệt đối không lưu khóa bí mật thực tế vào Git)**:
+   > [!IMPORTANT]
+   > **Nguyên tắc an toàn bảo mật**: Khóa ký JWT (`Jwt:Key`) là thông tin bí mật trọng yếu. Nếu commit khóa ký vào mã nguồn Git, kẻ tấn công có thể tự sinh token với role `ADMIN` để chiếm quyền toàn bộ hệ thống. Vì vậy, `appsettings.json` chỉ để giá trị rỗng hoặc cấu hình chung:
    ```json
    "Jwt": {
      "Issuer": "https://identity.falumni.local",
      "Audience": "falumni-services",
-     "Key": "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!",
+     "Key": "",
      "ClockSkewMinutes": 1
    }
    ```
-3. **Dung sai thời gian (Clock Tolerance / ClockSkew)**:
+
+3. **Cung cấp khóa ký khi chạy cục bộ (Local Development)**:
+   Mỗi lập trình viên cung cấp khóa ký thông qua cơ chế nạp cấu hình phân tầng của .NET theo một trong hai cách:
+
+   - **Cách A: Biến môi trường hệ thống (Windows PowerShell)**:
+     ```powershell
+     $env:Jwt__Key = "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!"
+     dotnet run --project src/Template.Api/Template.Api.csproj
+     ```
+     *(Lưu ý: Dấu hai chấm `:` trong .NET configuration được chuyển thành hai dấu gạch dưới `__` khi đặt tên biến môi trường).*
+
+   - **Cách B: .NET User Secrets (Khuyên dùng cho máy cá nhân)**:
+     ```powershell
+     # Khởi tạo user-secrets cho project API (nếu chưa có)
+     dotnet user-secrets init --project src/Template.Api
+
+     # Thiết lập khóa ký
+     dotnet user-secrets set "Jwt:Key" "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!" --project src/Template.Api
+
+     # Khởi chạy ứng dụng
+     dotnet run --project src/Template.Api/Template.Api.csproj
+     ```
+
+4. **Xác thực cấu hình lúc khởi động (Startup Validation)**:
+   Trong `Program.cs`, ứng dụng kiểm tra bắt buộc sự tồn tại và độ dài của `Jwt:Key` ngay khi khởi động:
+   ```csharp
+   var jwtKey = builder.Configuration["Jwt:Key"];
+   if (string.IsNullOrWhiteSpace(jwtKey))
+   {
+       throw new InvalidOperationException(
+           "JWT signing key ('Jwt:Key') is missing. Configure it via environment variable 'Jwt__Key' (e.g. $env:Jwt__Key = '...') or .NET User Secrets ('dotnet user-secrets set \"Jwt:Key\" \"...\"'). The key must be at least 32 bytes (256 bits) long.");
+   }
+   if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
+   {
+       throw new InvalidOperationException(
+           "JWT signing key ('Jwt:Key') is too short. The key must be at least 32 bytes (256 bits) long for HMAC-SHA256.");
+   }
+   ```
+   Nếu thiếu hoặc không đủ 32 bytes, ứng dụng sẽ dừng ngay lập tức (fail-fast) và hiển thị hướng dẫn khắc phục cụ thể, tuyệt đối không âm thầm sử dụng fallback secret không an toàn.
+
+5. **Cơ chế nạp khóa trong Kiểm thử Tự động (Automated Tests)**:
+   Các bài kiểm thử tích hợp (integration tests) không phụ thuộc vào biến môi trường máy host hay User Secrets. Lớp `CustomWebApplicationFactory` tự động inject khóa kiểm thử cục bộ:
+   ```csharp
+   public const string TestJwtSecret = "TestFixtureDeterministicKey_AtLeast32BytesLong_PRN232_ASM_2026!";
+
+   protected override void ConfigureWebHost(IWebHostBuilder builder)
+   {
+       builder.UseSetting("DatabaseProvider", "InMemory");
+       builder.UseSetting("Jwt:Key", TestJwtSecret);
+   }
+   ```
+   Nhờ đó, lệnh `dotnet test` luôn chạy độc lập, đáng tin cậy và đạt 100% pass trên mọi máy tính của thành viên và CI/CD.
+
+6. **Dung sai thời gian (Clock Tolerance / ClockSkew)**:
    - Được thiết lập tối đa **1 phút** (`TimeSpan.FromMinutes(1)`) để bù trừ độ lệch đồng hồ giữa các máy tính khác nhau của sinh viên trong nhóm.
 
 ---

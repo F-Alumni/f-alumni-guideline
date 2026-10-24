@@ -162,6 +162,17 @@ docker compose -f docker/compose.demo.yml down
   2. Độ dài khóa ký: Thuật toán HMAC-SHA256 yêu cầu khóa ký phải có độ dài **tối thiểu 32 bytes (256 bits)**.
   3. Lệch múi giờ (Clock Skew): Đảm bảo cấu hình `ClockSkew = TimeSpan.FromMinutes(1)` để tránh từ chối token vừa mới tạo.
 
+### 6.6. Lỗi Khởi Động Khi Thiếu Khóa Ký JWT (`InvalidOperationException`)
+- **Hiện tượng**: Khi gõ lệnh `dotnet run`, ứng dụng dừng ngay lập tức và in ra lỗi:  
+  `InvalidOperationException: JWT signing key ('Jwt:Key') is missing. Configure it via environment variable 'Jwt__Key'...`
+- **Nguyên nhân**: Để tuân thủ chuẩn an toàn bảo mật, template không lưu cứng khóa ký trong file `appsettings.json` đã commit lên Git.
+- **Cách khắc phục**:
+  - **Trên PowerShell**: Gán biến môi trường trước khi chạy:  
+    `$env:Jwt__Key = "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!"`  
+    `dotnet run --project src/<ServiceName>.Api`
+  - **Dùng .NET User Secrets**: Khởi tạo và lưu bí mật trên máy cá nhân:  
+    `dotnet user-secrets set "Jwt:Key" "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!" --project src/<ServiceName>.Api`
+
 ---
 
 ## 📚 7. Danh Mục Tài Liệu & Bước Tiếp Theo

@@ -68,9 +68,23 @@ dotnet test
 ```
 
 ### 3. Khởi chạy Web API cục bộ
-```bash
-dotnet run --project src/Template.Api/Template.Api.csproj
-```
+Trước khi khởi chạy, cần cung cấp khóa bí mật ký JWT (`Jwt:Key`). Nhằm tuân thủ bảo mật, khóa này **không được lưu cứng** trong `appsettings.json`.
+
+Cung cấp khóa ký thông qua một trong hai cách sau:
+- **Cách 1: Sử dụng biến môi trường (PowerShell)**:
+  ```powershell
+  $env:Jwt__Key = "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!"
+  dotnet run --project src/Template.Api/Template.Api.csproj
+  ```
+- **Cách 2: Sử dụng .NET User Secrets (khuyên dùng khi phát triển)**:
+  ```bash
+  dotnet user-secrets init --project src/Template.Api
+  dotnet user-secrets set "Jwt:Key" "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!" --project src/Template.Api
+  dotnet run --project src/Template.Api/Template.Api.csproj
+  ```
+
+> 💡 **Lưu ý**: Khóa JWT phải có độ dài tối thiểu **32 ký tự / 256 bits** (chuẩn HMAC-SHA256). Nếu thiếu hoặc quá ngắn, ứng dụng sẽ dừng ngay ở bước khởi động với thông báo lỗi rõ ràng. Đối với kiểm thử tự động (`dotnet test`), test fixture `CustomWebApplicationFactory` tự động nạp khóa kiểm thử độc lập mà không cần cấu hình thủ công.
+
 Mặc định ứng dụng sẽ lắng nghe trên cổng HTTP: `http://localhost:5000`.
 
 ---

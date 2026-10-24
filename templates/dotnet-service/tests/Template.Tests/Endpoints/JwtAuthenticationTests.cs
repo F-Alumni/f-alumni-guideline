@@ -15,7 +15,7 @@ namespace Template.Tests.Endpoints;
 public class JwtAuthenticationTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;
-    private const string JwtSecret = "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!";
+    private const string JwtSecret = CustomWebApplicationFactory.TestJwtSecret;
     private const string JwtIssuer = "https://identity.falumni.local";
     private const string JwtAudience = "falumni-services";
 
@@ -182,5 +182,45 @@ public class JwtAuthenticationTests : IClassFixture<CustomWebApplicationFactory>
         Assert.NotNull(json);
         Assert.Equal(userId, json["userId"]);
         Assert.Equal("USER", json["role"]);
+    }
+
+    [Fact]
+    public void Startup_MissingJwtKey_ThrowsInvalidOperationException()
+    {
+        // Arrange: Factory configured with empty/missing Jwt:Key
+        using var factoryWithoutKey = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseSetting("DatabaseProvider", "InMemory");
+                builder.UseSetting("Jwt:Key", "");
+            });
+
+        // Act & Assert: Host startup fails fast with actionable exception
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+        {
+            _ = factoryWithoutKey.CreateClient();
+        });
+
+        Assert.Contains("JWT signing key ('Jwt:Key') is missing", ex.Message);
+    }
+
+    [Fact]
+    public void Startup_KeyShorterThan32Bytes_ThrowsInvalidOperationException()
+    {
+        // Arrange: Key with fewer than 32 bytes (256 bits)
+        using var factoryWithShortKey = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseSetting("DatabaseProvider", "InMemory");
+                builder.UseSetting("Jwt:Key", "too-short-secret-key");
+            });
+
+        // Act & Assert
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+        {
+            _ = factoryWithShortKey.CreateClient();
+        });
+
+        Assert.Contains("too short", ex.Message);
     }
 }
