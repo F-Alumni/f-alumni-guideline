@@ -64,7 +64,15 @@ dotnet build
 
 ### 2. Chạy Kiểm thử (xUnit Unit & Integration Tests)
 ```bash
+# 2.1 Chạy toàn bộ kiểm thử đơn vị & API integration với EF Core InMemory (36 tests passed)
 dotnet test
+
+# 2.2 Chạy thêm kiểm thử tích hợp thực tế với SQL Server (FptAlumni_Guideline_Test_Db) (43 tests passed)
+$env:RUN_SQLSERVER_TESTS = "true"
+dotnet test
+
+# 2.3 Chỉ chạy riêng các bài kiểm thử SQL Server Integration
+dotnet test --filter "Category=SqlServerIntegration"
 ```
 
 ### 3. Khởi chạy Web API cục bộ

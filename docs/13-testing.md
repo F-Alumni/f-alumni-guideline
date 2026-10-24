@@ -71,6 +71,24 @@ flowchart TD
   1. Route rút gọn `/api/chat/rooms/{id}/messages` biến đổi thành `/api/v1/chats/rooms/{id}/messages`.
   2. Upstream microservice bị tắt $\rightarrow$ Gateway trả về `502 Bad Gateway` theo chuẩn RFC 7807 ProblemDetails.
 
+### 3.6. Kiểm Thử Tích Hợp Cơ Sở Dữ Liệu SQL Server Thật
+- **Mục tiêu**: Đảm bảo toàn bộ luồng CRUD, EF Core Migrations, ràng buộc dữ liệu quan hệ (Data Constraints), phân trang (`OFFSET ... FETCH NEXT`) và sắp xếp hoạt động chính xác trên Microsoft SQL Server thật.
+- **Vị trí mẫu**: [`templates/dotnet-service/tests/Template.Tests/Database/SampleItemSqlServerIntegrationTests.cs`](file:///c:/Use/University/PRN232/ASM/guideline/templates/dotnet-service/tests/Template.Tests/Database/SampleItemSqlServerIntegrationTests.cs).
+- **Nguyên tắc an toàn & cách ly dữ liệu**:
+  1. **Chỉ kết nối database test riêng biệt**: Toàn bộ kiểm thử được giới hạn nghiêm ngặt trong database `FptAlumni_Guideline_Test_Db`. Lớp [`SqlServerTestEnvironment`](file:///c:/Use/University/PRN232/ASM/guideline/templates/dotnet-service/tests/Template.Tests/Infrastructure/SqlServerTestEnvironment.cs) sẽ chặn ngay lập tức nếu phát hiện kết nối trỏ tới database nghiệp vụ.
+  2. **Tách biệt kiểm thử linh hoạt qua `[SqlServerFact]`**: Khi chạy `dotnet test` bình thường trên máy không có SQL Server, 7 bài kiểm thử SQL Server sẽ tự động được đánh dấu **SKIP** an toàn mà không làm gãy quy trình CI/CD.
+  3. **Kích hoạt kiểm thử SQL Server thật**:
+     ```powershell
+     # Cách 1: Sử dụng cờ kích hoạt cục bộ (mặc định trỏ tới localhost\SQLEXPRESS)
+     $env:RUN_SQLSERVER_TESTS = "true"
+     dotnet test templates/dotnet-service/Template.sln
+
+     # Cách 2: Cung cấp chuỗi kết nối tùy chỉnh qua biến môi trường
+     $env:TEST_SQLSERVER_CONNECTION_STRING = "Server=localhost\SQLEXPRESS;Database=FptAlumni_Guideline_Test_Db;Trusted_Connection=True;TrustServerCertificate=True;"
+     dotnet test templates/dotnet-service/Template.sln --filter "Category=SqlServerIntegration"
+     ```
+  4. **Tự dọn dẹp dữ liệu (Self-cleaning)**: Mỗi test theo dõi danh sách GUID do chính nó tạo ra và xóa sạch trong `DisposeAsync`, không làm ảnh hưởng đến dữ liệu khác và không bao giờ tự ý drop database.
+
 ---
 
 ## ⚡ 4. Bộ Công Cụ Tự Động Hóa Kiểm Thử Của Dự Án
@@ -78,7 +96,7 @@ flowchart TD
 Nhóm đồ án đã xây dựng sẵn 2 kịch bản PowerShell tự động để phục vụ kiểm thử:
 
 ### 4.1. Kịch Bản Xác Minh Toàn Diện (`scripts/verify-all.ps1`)
-Chạy kiểm tra toàn bộ 5 solution, kiểm tra cấu hình tĩnh và chạy 54 ca kiểm thử đơn vị:
+Chạy kiểm tra toàn bộ 5 solution, kiểm tra cấu hình tĩnh và chạy toàn bộ bộ kiểm thử tự động:
 
 ```powershell
 # Thực hiện toàn bộ kiểm tra:
@@ -92,14 +110,14 @@ Chạy kiểm tra toàn bộ 5 solution, kiểm tra cấu hình tĩnh và chạy
 ```
 
 **Bảng Tổng Hợp Kiểm Thử Trong `verify-all.ps1`**:
-| Solution | Dự án Kiểm Thử | Số lượng Tests | Trạng thái |
-| :--- | :--- | :---: | :---: |
-| `Template.sln` | `Template.Tests` | 20 | **PASS** |
-| `KafkaDemo.sln` | `KafkaDemo.Tests` | 10 | **PASS** |
-| `GrpcDemo.sln` | `GrpcDemo.Tests` | 8 | **PASS** |
-| `DemoWorker.sln` | `DemoWorker.Tests` | 10 | **PASS** |
-| `GatewayDemo.sln` | `GatewayDemo.Tests` | 6 | **PASS** |
-| **Tổng cộng** | **5 Test Projects** | **54 Tests** | **100% PASS** |
+| Solution | Dự án Kiểm Thử | Số lượng Tests (Mặc định) | Số lượng Tests (Kèm SQL Server) | Trạng thái |
+| :--- | :--- | :---: | :---: | :---: |
+| `Template.sln` | `Template.Tests` | 36 passed (7 skipped) | 43 passed (0 skipped) | **PASS** |
+| `KafkaDemo.sln` | `KafkaDemo.Tests` | 10 | 10 | **PASS** |
+| `GrpcDemo.sln` | `GrpcDemo.Tests` | 8 | 8 | **PASS** |
+| `DemoWorker.sln` | `DemoWorker.Tests` | 10 | 10 | **PASS** |
+| `GatewayDemo.sln` | `GatewayDemo.Tests` | 6 | 6 | **PASS** |
+| **Tổng cộng** | **5 Test Projects** | **70 Passed** | **77 Passed** | **100% PASS** |
 
 ### 4.2. Kịch Bản Smoke Test Tích Hợp (`scripts/smoke-test.ps1`)
 Chạy kiểm tra luồng tích hợp xuyên suốt giữa các microservices:

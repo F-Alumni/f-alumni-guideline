@@ -15,6 +15,10 @@
 5. [Cấu hình Chuỗi Kết nối (Connection Strings Configuration)](#5-cấu-hình-chuỗi-kết-nối-connection-strings-configuration)
 6. [Quy trình Quản lý EF Core Migrations (Local Dev vs Deployment)](#6-quy-trình-quản-lý-ef-core-migrations-local-dev-vs-deployment)
 7. [Fluent API Configuration & Thực thi Mẫu trong Template](#7-fluent-api-configuration--thực-thi-mẫu-trong-template)
+8. [Cấu hình Kết nối SQL Server Express & Xác thực](#8-cấu-hình-kết-nối-sql-server-express--xác-thực)
+9. [Kiểm thử Tích hợp Cơ sở Dữ liệu Thật & Cách ly An toàn](#9-kiểm-thử-tích-hợp-cơ-sở-dữ-liệu-thật--cách-ly-an-toàn)
+10. [So sánh EF Core InMemory vs SQL Server Thật](#10-so-sánh-ef-core-inmemory-vs-sql-server-thật)
+11. [Hướng dẫn Khắc phục Sự cố & An toàn Dữ liệu](#11-hướng-dẫn-khắc-phục-sự-cố--an-toàn-dữ-liệu)
 
 ---
 
@@ -220,3 +224,119 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
     modelBuilder.ApplyConfiguration(new SampleItemConfiguration());
 }
 ```
+
+---
+
+## 8. Cấu hình Kết nối SQL Server Express & Xác thực
+
+### 8.1 Chuỗi kết nối cục bộ (Windows Authentication / Trusted Connection)
+Đối với máy phát triển cá nhân sử dụng SQL Server Express, chuỗi kết nối sử dụng xác thực Windows tích hợp (Integrated Security), không cần nhập User ID và Password:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost\\SQLEXPRESS;Database=FAlumni_<ServiceName>_Db;Trusted_Connection=True;TrustServerCertificate=True;"
+  }
+}
+```
+
+> [!NOTE]
+> - `Server=localhost\SQLEXPRESS` hoặc `Server=.\SQLEXPRESS`: Trỏ tới Named Instance mặc định của SQL Server Express trên Windows.
+> - `Trusted_Connection=True` (hoặc `Integrated Security=True`): Đăng nhập bằng tài khoản Windows hiện tại.
+> - `TrustServerCertificate=True`: Tránh lỗi bắt buộc kiểm tra TLS Certificate tự ký trên môi trường phát triển cục bộ.
+
+### 8.2 Chuỗi kết nối Docker / SQL Server Authentication
+Khi triển khai qua Docker hoặc môi trường kiểm thử tập trung:
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=sqlserver,1433;Database=FAlumni_<ServiceName>_Db;User Id=sa;Password=YourStrong@Password123;TrustServerCertificate=True;"
+  }
+}
+```
+
+### 8.3 Ghi đè cấu hình qua Biến Môi trường (Environment Variables)
+ASP.NET Core hỗ trợ ghi đè cấu hình phân cấp thông qua biến môi trường sử dụng tiền tố hai dấu gạch dưới `__`:
+```powershell
+# PowerShell:
+$env:ConnectionStrings__DefaultConnection = "Server=.\SQLEXPRESS;Database=FAlumni_<ServiceName>_Db;Trusted_Connection=True;TrustServerCertificate=True;"
+dotnet run --project src/Template.Api
+```
+
+> [!CAUTION]
+> **Tuyệt đối không commit mật khẩu SQL Server lên Git**: Mật khẩu máy chủ hoặc tài khoản `sa` phải luôn được nạp từ biến môi trường, tệp `.env` (được đưa vào `.gitignore`), hoặc User Secrets.
+
+---
+
+## 9. Kiểm thử Tích hợp Cơ sở Dữ liệu Thật & Cách ly An toàn
+
+### 9.1 Cơ sở dữ liệu kiểm thử dùng một lần (`FptAlumni_Guideline_Test_Db`)
+Để bảo vệ an toàn cho các cơ sở dữ liệu nghiệp vụ (`FAlumni_User_Db`, `FAlumni_Chat_Db`, v.v.), toàn bộ các ca kiểm thử tích hợp thực tế với SQL Server được **cách ly tuyệt đối** vào một database dùng một lần:
+
+`FptAlumni_Guideline_Test_Db`
+
+### 9.2 Cơ chế Chốt chặn An toàn (Isolation Guardrail)
+Mã kiểm thử tích hợp trong [`SqlServerTestEnvironment`](file:///c:/Use/University/PRN232/ASM/guideline/templates/dotnet-service/tests/Template.Tests/Infrastructure/SqlServerTestEnvironment.cs) thực thi kiểm tra nghiêm ngặt trước khi tạo bất kỳ kết nối nào:
+- Nếu chuỗi kết nối trỏ tới bất kỳ cơ sở dữ liệu nào khác ngoài `FptAlumni_Guideline_Test_Db`, hệ thống sẽ ném ngoại lệ `InvalidOperationException` và lập tức dừng kiểm thử.
+- Tuyệt đối không tự động chạy lệnh `DROP DATABASE` hoặc `EnsureDeleted()`.
+- Các ca kiểm thử tự tạo ID duy nhất cho mỗi bản ghi (`Guid.NewGuid()`), theo dõi danh sách ID này và chỉ dọn dẹp đúng những bản ghi do chính nó tạo ra trong phương thức `DisposeAsync`.
+
+### 9.3 Quy trình Xác minh EF Core Migrations
+1. **Kiểm tra tính hợp lệ của Migration**: Xác nhận migration `20261024091753_InitialCreate` khớp với cấu hình Fluent API trong `SampleItemConfiguration`.
+2. **Thực thi Migration lên SQL Server thật**:
+   ```bash
+   dotnet ef database update --project src/Template.Repositories --startup-project src/Template.Api
+   ```
+3. **Xác minh bảng và lược đồ**:
+   - Bảng `__EFMigrationsHistory` được khởi tạo và ghi nhận bản ghi `20261024091753_InitialCreate`.
+   - Bảng `SampleItems` được tạo với đúng kiểu dữ liệu:
+     - `Id`: `uniqueidentifier` (Primary Key).
+     - `Name`: `nvarchar(100)` NOT NULL.
+     - `Description`: `nvarchar(500)` NOT NULL, Default `(N'')`.
+     - `IsActive`: `bit` NOT NULL, Default `1`.
+     - `CreatedAtUtc`: `datetime2` NOT NULL.
+4. **Tính lũy đẳng khi chạy lại**: Khi chạy lại lệnh `dotnet ef database update`, EF Core nhận diện database đã cập nhật và không sinh ra bất kỳ thay đổi dư thừa nào.
+
+---
+
+## 10. So sánh EF Core InMemory vs SQL Server Thật
+
+| Tiêu chí | EF Core InMemory Provider | Microsoft SQL Server (Relational) |
+| :--- | :--- | :--- |
+| **Mục đích sử dụng** | Unit test nhanh trong bộ nhớ, không cần cài đặt SQL Server. | Kiểm thử tích hợp thực tế (Integration Test) & Môi trường Runtime. |
+| **Kiểm tra ràng buộc chuỗi (`HasMaxLength`)** | Bỏ qua hoàn toàn (cho phép chuỗi vượt quá 100 ký tự mà không báo lỗi). | Ép buộc nghiêm ngặt: Ném ngoại lệ `DbUpdateException` khi vượt quá độ dài khai báo. |
+| **Ràng buộc khóa chính & duy nhất** | Hỗ trợ cơ bản trong bộ nhớ. | Ép buộc ở mức engine database với chỉ mục (Clustered/Non-Clustered Index). |
+| **Thực thi Migrations** | **Không hỗ trợ**: Không tạo bảng `__EFMigrationsHistory` hay schema DDL. | **Hỗ trợ đầy đủ**: Chạy DDL migration và ghi vết lịch sử migration. |
+| **Biên dịch câu lệnh LINQ** | Đánh giá trực tiếp trên đối tượng C# / LINQ to Objects. | Biên dịch thành T-SQL (`SELECT ... OFFSET ... FETCH NEXT`, `LIKE '%...'`). |
+| **Giao dịch (Transactions & ACID)** | Không hỗ trợ rollback transaction thực sự. | Hỗ trợ đầy đủ ACID transaction, commit và rollback. |
+
+---
+
+## 11. Hướng dẫn Khắc phục Sự cố & An toàn Dữ liệu
+
+### 11.1 Dịch vụ SQL Server chưa khởi động (Connection Refused)
+Nếu gặp lỗi `A network-related or instance-specific error occurred while establishing a connection to SQL Server`:
+1. Kiểm tra trạng thái dịch vụ SQL Server trong PowerShell:
+   ```powershell
+   Get-Service -Name *sql*
+   ```
+2. Nếu `MSSQL$SQLEXPRESS` đang ở trạng thái `Stopped`, khởi động lại:
+   ```powershell
+   Start-Service MSSQL$SQLEXPRESS
+   ```
+
+### 11.2 Lỗi Xác thực Chứng chỉ SSL/TLS (`The certificate chain was issued by an authority that is not trusted`)
+- **Nguyên nhân**: Môi trường phát triển cục bộ dùng chứng chỉ tự ký chưa được tin cậy trong chứng thư gốc của Windows.
+- **Cách khắc phục**: Luôn thêm tham số `TrustServerCertificate=True;` vào chuỗi kết nối phát triển cục bộ.
+
+### 11.3 Lỗi Phân quyền Đăng nhập (`Login failed for user`)
+- Đối với `Trusted_Connection=True`: Đảm bảo tài khoản Windows hiện tại đã được cấp quyền `sysadmin` hoặc `dbcreator` trên SQL Server.
+- Đối với tài khoản `sa`: Kiểm tra xem SQL Server đã bật chế độ **SQL Server and Windows Authentication mode** (Mixed Mode) trong SQL Server Management Studio (SSMS) hay chưa.
+
+### 11.4 Nguyên tắc Tạo Database cho từng Dịch vụ Mới
+Mỗi khi lập trình viên bắt đầu một service mới (`User`, `Chat`, `Forum`, `AI`, `Admin`):
+1. Đặt tên database theo đúng chuẩn `FAlumni_<ServiceName>_Db`.
+2. Tạo Migration đầu tiên: `dotnet ef migrations add InitialCreate --project src/<ServiceName>.Repositories --startup-project src/<ServiceName>.Api`.
+3. Cập nhật database: `dotnet ef database update --project src/<ServiceName>.Repositories --startup-project src/<ServiceName>.Api`.
+4. Tuyệt đối không dùng chung database giữa các service.
+
