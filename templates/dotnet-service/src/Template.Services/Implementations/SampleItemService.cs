@@ -84,6 +84,31 @@ public class SampleItemService : ISampleItemService
         return MapToResponse(created);
     }
 
+    public async Task<SampleItemResponse> UpdateAsync(Guid id, UpdateSampleItemRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        _logger.LogInformation("Updating sample item with ID: {ItemId}", id);
+
+        var entityToUpdate = new SampleItem
+        {
+            Id = id,
+            Name = request.Name.Trim(),
+            Description = request.Description?.Trim() ?? string.Empty,
+            IsActive = request.IsActive
+        };
+
+        var updated = await _repository.UpdateAsync(entityToUpdate, cancellationToken);
+        if (updated is null)
+        {
+            _logger.LogWarning("Cannot update: Sample item {ItemId} not found.", id);
+            throw new NotFoundException(nameof(SampleItem), id);
+        }
+
+        _logger.LogInformation("Sample item {ItemId} updated successfully.", id);
+        return MapToResponse(updated);
+    }
+
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Deleting sample item with ID: {ItemId}", id);

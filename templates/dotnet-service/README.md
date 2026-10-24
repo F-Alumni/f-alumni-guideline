@@ -96,11 +96,12 @@ Mặc định ứng dụng sẽ lắng nghe trên cổng HTTP: `http://localhost
 | Phương thức | Đường dẫn URL | Mô tả | Mã trạng thái HTTP |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/health` | Kiểm tra tình trạng hoạt động (Health Check) | `200 OK` (`"Healthy"`) |
-| `GET` | `/api/v1/sample-items` | Lấy danh sách toàn bộ các items | `200 OK` (JSON List) |
+| `GET` | `/api/v1/sample-items` | Lấy danh sách toàn bộ các items (Public) | `200 OK` (JSON List) |
 | `GET` | `/api/v1/sample-items/paged` | Lấy danh sách có phân trang (`pageNumber`, `pageSize`) và tìm kiếm | `200 OK` (`PagedResponse<T>`) |
-| `GET` | `/api/v1/sample-items/{id}` | Lấy chi tiết 1 item theo GUID | `200 OK` hoặc `404 Not Found` |
-| `POST` | `/api/v1/sample-items` | Tạo mới 1 sample item | `201 Created` (Kèm Location header) |
-| `DELETE` | `/api/v1/sample-items/{id}` | Xóa 1 sample item theo GUID | `204 NoContent` hoặc `404 Not Found` |
+| `GET` | `/api/v1/sample-items/{id}` | Lấy chi tiết 1 item theo GUID (Public) | `200 OK` hoặc `404 Not Found` |
+| `POST` | `/api/v1/sample-items` | Tạo mới 1 sample item (USER/ADMIN role) | `201 Created` (Kèm Location header) |
+| `PUT` | `/api/v1/sample-items/{id}` | Cập nhật toàn bộ thông tin 1 item theo GUID (USER/ADMIN role) | `200 OK` hoặc `404 Not Found` |
+| `DELETE` | `/api/v1/sample-items/{id}` | Xóa 1 sample item theo GUID (ADMIN role) | `204 NoContent` hoặc `404 Not Found` |
 
 ---
 

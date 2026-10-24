@@ -63,6 +63,22 @@ public class SampleItemRepository : ISampleItemRepository
         return item;
     }
 
+    public async Task<SampleItem?> UpdateAsync(SampleItem item, CancellationToken cancellationToken = default)
+    {
+        var existing = await _dbContext.SampleItems.FirstOrDefaultAsync(x => x.Id == item.Id, cancellationToken);
+        if (existing is null)
+        {
+            return null;
+        }
+
+        existing.Name = item.Name;
+        existing.Description = item.Description;
+        existing.IsActive = item.IsActive;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return existing;
+    }
+
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var existing = await _dbContext.SampleItems.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);

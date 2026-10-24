@@ -109,6 +109,36 @@ public class SampleItemsController : ControllerBase
     }
 
     /// <summary>
+    /// Updates an existing sample item resource by ID. Requires authenticated USER or ADMIN role.
+    /// </summary>
+    /// <param name="id">Unique GUID identifier of the sample item to update.</param>
+    /// <param name="request">Update payload with name, optional description, and active status.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <response code="200">Item updated successfully, returns the updated resource.</response>
+    /// <response code="400">Request validation failed or payload invalid.</response>
+    /// <response code="401">Missing or invalid JWT Bearer token.</response>
+    /// <response code="403">Authenticated user does not have USER or ADMIN role.</response>
+    /// <response code="404">Item with specified ID was not found.</response>
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = "USER,ADMIN")]
+    [ProducesResponseType(typeof(SampleItemResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<SampleItemResponse>> Update(
+        Guid id,
+        [FromBody] UpdateSampleItemRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+        _logger.LogInformation("HTTP PUT api/v1/sample-items/{Id} requested by user {UserId} with name: {Name}", id, userId, request.Name);
+
+        var updated = await _sampleItemService.UpdateAsync(id, request, cancellationToken);
+        return Ok(updated);
+    }
+
+    /// <summary>
     /// Deletes a sample item resource by ID. Requires ADMIN role.
     /// </summary>
     /// <param name="id">Unique GUID identifier of the sample item to delete.</param>

@@ -119,6 +119,56 @@ public class SampleItemServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task UpdateAsync_ExistingId_UpdatesAndReturnsItem()
+    {
+        // Arrange
+        var updateRequest = new UpdateSampleItemRequest
+        {
+            Name = "Updated Item Name",
+            Description = "Updated Description",
+            IsActive = false
+        };
+
+        // Act
+        var updated = await _service.UpdateAsync(_seedId, updateRequest);
+
+        // Assert
+        Assert.NotNull(updated);
+        Assert.Equal(_seedId, updated.Id);
+        Assert.Equal("Updated Item Name", updated.Name);
+        Assert.Equal("Updated Description", updated.Description);
+        Assert.False(updated.IsActive);
+
+        // Verify persistence
+        var retrieved = await _service.GetByIdAsync(_seedId);
+        Assert.Equal("Updated Item Name", retrieved.Name);
+        Assert.False(retrieved.IsActive);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_NonExistingId_ThrowsNotFoundException()
+    {
+        // Arrange
+        var nonExistingId = Guid.NewGuid();
+        var updateRequest = new UpdateSampleItemRequest
+        {
+            Name = "NonExistent Item",
+            Description = "Should fail",
+            IsActive = true
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<NotFoundException>(() => _service.UpdateAsync(nonExistingId, updateRequest));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_NullRequest_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _service.UpdateAsync(_seedId, null!));
+    }
+
+    [Fact]
     public async Task DeleteAsync_ExistingId_RemovesItem()
     {
         // Arrange

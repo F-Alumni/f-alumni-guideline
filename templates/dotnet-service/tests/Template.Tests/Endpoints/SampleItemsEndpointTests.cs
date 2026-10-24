@@ -130,4 +130,125 @@ public class SampleItemsEndpointTests : IClassFixture<CustomWebApplicationFactor
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
     }
+
+    [Fact]
+    public async Task PutEndpoint_ValidPayload_ReturnsOkAndUpdatedResource()
+    {
+        // Arrange: Create a new resource first
+        var createRequest = new CreateSampleItemRequest
+        {
+            Name = "Item To Update " + Guid.NewGuid().ToString()[..8],
+            Description = "Original description"
+        };
+        var createResponse = await _client.PostAsJsonAsync("/api/v1/sample-items", createRequest);
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+        var created = await createResponse.Content.ReadFromJsonAsync<SampleItemResponse>();
+        Assert.NotNull(created);
+
+        var updateRequest = new UpdateSampleItemRequest
+        {
+            Name = "Successfully Updated Name",
+            Description = "Updated Description Content",
+            IsActive = false
+        };
+
+        // Act
+        var putResponse = await _client.PutAsJsonAsync($"/api/v1/sample-items/{created.Id}", updateRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+        var updated = await putResponse.Content.ReadFromJsonAsync<SampleItemResponse>();
+        Assert.NotNull(updated);
+        Assert.Equal(created.Id, updated.Id);
+        Assert.Equal("Successfully Updated Name", updated.Name);
+        Assert.Equal("Updated Description Content", updated.Description);
+        Assert.False(updated.IsActive);
+
+        // Verify with GET
+        var getResponse = await _client.GetAsync($"/api/v1/sample-items/{created.Id}");
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        var retrieved = await getResponse.Content.ReadFromJsonAsync<SampleItemResponse>();
+        Assert.NotNull(retrieved);
+        Assert.Equal("Successfully Updated Name", retrieved.Name);
+        Assert.False(retrieved.IsActive);
+
+        // Cleanup
+        await _client.DeleteAsync($"/api/v1/sample-items/{created.Id}");
+    }
+
+    [Fact]
+    public async Task PutEndpoint_NonExistingId_ReturnsNotFoundProblemDetails()
+    {
+        // Arrange
+        var nonExistingId = Guid.NewGuid();
+        var updateRequest = new UpdateSampleItemRequest
+        {
+            Name = "Valid Name",
+            Description = "Valid Description",
+            IsActive = true
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/api/v1/sample-items/{nonExistingId}", updateRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public async Task PutEndpoint_InvalidPayload_ReturnsBadRequest()
+    {
+        // Arrange
+        var itemId = Guid.NewGuid();
+        var invalidRequest = new UpdateSampleItemRequest
+        {
+            Name = "", // Required, min 2 chars
+            Description = "Invalid empty name"
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/api/v1/sample-items/{itemId}", invalidRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteEndpoint_ExistingId_ReturnsNoContent()
+    {
+        // Arrange: Create a resource to delete
+        var createRequest = new CreateSampleItemRequest
+        {
+            Name = "Item For Delete Test " + Guid.NewGuid().ToString()[..8],
+            Description = "To be deleted"
+        };
+        var createResponse = await _client.PostAsJsonAsync("/api/v1/sample-items", createRequest);
+        var created = await createResponse.Content.ReadFromJsonAsync<SampleItemResponse>();
+        Assert.NotNull(created);
+
+        // Act
+        var deleteResponse = await _client.DeleteAsync($"/api/v1/sample-items/{created.Id}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        // Verify subsequent GET returns 404
+        var getResponse = await _client.GetAsync($"/api/v1/sample-items/{created.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteEndpoint_NonExistingId_ReturnsNotFoundProblemDetails()
+    {
+        // Arrange
+        var nonExistingId = Guid.NewGuid();
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/v1/sample-items/{nonExistingId}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+    }
 }

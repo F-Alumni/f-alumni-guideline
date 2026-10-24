@@ -185,6 +185,97 @@ public class JwtAuthenticationTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task PutEndpoint_MissingToken_Returns401Unauthorized()
+    {
+        // Arrange
+        var itemId = Guid.NewGuid();
+        var updateRequest = new UpdateSampleItemRequest { Name = "Updated Name" };
+
+        // Act (No Authorization header)
+        var response = await _client.PutAsJsonAsync($"/api/v1/sample-items/{itemId}", updateRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PutEndpoint_InvalidToken_Returns401Unauthorized()
+    {
+        // Arrange
+        var itemId = Guid.NewGuid();
+        var updateRequest = new UpdateSampleItemRequest { Name = "Updated Name" };
+        using var request = new HttpRequestMessage(HttpMethod.Put, $"/api/v1/sample-items/{itemId}")
+        {
+            Content = JsonContent.Create(updateRequest)
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "invalid.token");
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteEndpoint_MissingToken_Returns401Unauthorized()
+    {
+        // Arrange
+        var itemId = Guid.NewGuid();
+
+        // Act (No Authorization header)
+        var response = await _client.DeleteAsync($"/api/v1/sample-items/{itemId}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteEndpoint_InvalidToken_Returns401Unauthorized()
+    {
+        // Arrange
+        var itemId = Guid.NewGuid();
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/v1/sample-items/{itemId}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "invalid.token");
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteEndpoint_UserRoleWithoutAdmin_Returns403Forbidden()
+    {
+        // Arrange: Valid token with role USER (Delete requires ADMIN role)
+        var userToken = GenerateTestJwt(Guid.NewGuid().ToString(), "USER");
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/v1/sample-items/{Guid.NewGuid()}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteEndpoint_AdminRole_AllowsAccess()
+    {
+        // Arrange: Valid token with role ADMIN
+        var adminToken = GenerateTestJwt(Guid.NewGuid().ToString(), "ADMIN");
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/v1/sample-items/{Guid.NewGuid()}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert: Admin role is authorized (passes 401/403 check), returns 404 for random nonexistent ID
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public void Startup_MissingJwtKey_ThrowsInvalidOperationException()
     {
         // Arrange: Factory configured with empty/missing Jwt:Key
