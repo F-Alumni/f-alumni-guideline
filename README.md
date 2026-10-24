@@ -145,14 +145,20 @@ Toàn bộ quy chuẩn và đặc tả chi tiết của dự án được lưu t
      - **AD-01 đến AD-09**: Quản trị hệ thống & Kiểm duyệt (Admin Service).
    - Phân cấp mức độ ưu tiên: **P0 (Must Have - Cốt lõi MVP)**, **P1 (Should Have - Tiêu chuẩn đồ án)**, **P2 (Nice to Have - Nâng cao)**.
 
-3. 📙 [**Tài liệu 14 — Quy chuẩn Git & Quy trình Làm việc Nhóm (Team Workflow & Git Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md):
+3. 📕 [**Tài liệu 04 — Quy chuẩn Phát triển .NET 10 & Kiến trúc Phân tầng (Layered Architecture Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/04-dotnet-standards.md):
+   - Chuẩn hóa cấu trúc thư mục 3 tầng: `Api` $\rightarrow$ `Services` $\rightarrow$ `Repositories`.
+   - Quy tắc ràng buộc phụ thuộc nghiêm ngặt (Controller không được phụ thuộc trực tiếp vào Repository).
+   - Quy chuẩn đặt tên C# (.NET 10), xử lý ngoại lệ tập trung qua Middleware (RFC 7807), logging và health checks.
+   - Hướng dẫn sao chép và đổi tên template tại `templates/dotnet-service/` cho các service mới.
+
+4. 📙 [**Tài liệu 14 — Quy chuẩn Git & Quy trình Làm việc Nhóm (Team Workflow & Git Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md):
    - Quy chuẩn đặt tên Multi-Repository (`f-alumni-*`).
    - Phân công quyền sở hữu mã nguồn chính (Primary Owner) và người duyệt chéo (Reviewer).
    - Chiến lược phân nhánh tinh gọn: `main`, `develop`, `feat/<ticket>-<name>`, `fix/<ticket>-<name>`.
    - Quy trình phối hợp thay đổi Hợp đồng API (Contract Change) và Breaking Changes.
    - Hướng dẫn chi tiết từng bước cho người mới và Mẫu Pull Request chuẩn.
 
-4. 🤝 [**Hướng dẫn Đóng góp (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
+5. 🤝 [**Hướng dẫn Đóng góp (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
    - Quy tắc chung dành cho thành viên khi tham gia đóng góp mã nguồn cho các repository trong tổ chức F-Alumni.
 
 ---
@@ -160,10 +166,12 @@ Toàn bộ quy chuẩn và đặc tả chi tiết của dự án được lưu t
 ## 🚀 5. Hướng dẫn Dành cho Lập trình viên Mới (Beginner Developer Quickstart)
 
 1. **Clone repository và đọc kỹ tài liệu**:
-   - Mọi thành viên cần đọc kỹ [docs/02-architecture.md](file:///c:/Use/University/PRN232/ASM/guideline/docs/02-architecture.md) và [docs/14-team-workflow.md](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md) trước khi viết dòng code đầu tiên.
-2. **Quy tắc làm việc với Git**:
+   - Mọi thành viên cần đọc kỹ [docs/02-architecture.md](file:///c:/Use/University/PRN232/ASM/guideline/docs/02-architecture.md), [docs/04-dotnet-standards.md](file:///c:/Use/University/PRN232/ASM/guideline/docs/04-dotnet-standards.md) và [docs/14-team-workflow.md](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md) trước khi viết dòng code đầu tiên.
+2. **Khởi tạo Service từ Template**:
+   - Các thành viên Backend copy khung dự án chuẩn từ [templates/dotnet-service/](file:///c:/Use/University/PRN232/ASM/guideline/templates/dotnet-service/) vào repository của mình theo hướng dẫn tại [templates/dotnet-service/README.md](file:///c:/Use/University/PRN232/ASM/guideline/templates/dotnet-service/README.md).
+3. **Quy tắc làm việc với Git**:
    - Bắt đầu tính năng mới bằng cách checkout nhánh `develop`, tạo nhánh `feat/<ticket>-<tên_tính_năng>`, và mở Pull Request vào `develop` theo [CONTRIBUTING.md](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md).
-3. **Quy tắc tạo bảng và liên kết**:
+4. **Quy tắc tạo bảng và liên kết**:
    - Nếu bạn làm việc trên `Chat Service` hoặc `Forum Service`, bạn chỉ được lưu `UserId` dưới dạng số nguyên (`int`) hoặc `Guid`. Tuyệt đối không tạo Foreign Key sang bảng `Users` của service khác.
-4. **Quy tắc giao tiếp**:
+5. **Quy tắc giao tiếp**:
    - Khi cần dữ liệu của service khác: Nếu cần phản hồi tức thì để hiển thị giao diện, hãy sử dụng **gRPC / REST API**. Nếu chỉ cần thông báo sự kiện đã hoàn tất, hãy phát thông điệp lên **Kafka**.
