@@ -169,14 +169,23 @@ Toàn bộ quy chuẩn và đặc tả chi tiết của dự án được lưu t
    - Cấu hình ký HS256 qua configuration và dung sai thời gian (ClockSkew).
    - Quy định trích xuất định danh từ Claims (chống header spoofing) và xử lý 401/403 cho Web/Flutter.
 
-7. 📙 [**Tài liệu 14 — Quy chuẩn Git & Quy trình Làm việc Nhóm (Team Workflow & Git Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md):
+7. 📨 [**Tài liệu 08 — Hợp đồng Sự kiện Kafka & Xử lý Bất đồng bộ (Kafka Event Contracts & Async Processing)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/08-kafka.md):
+   - Chuẩn hóa cấu trúc phong bì sự kiện chung `EventEnvelope<T>` (`eventId`, `eventType`, `version`, `occurredAt`, `correlationId`, `producer`, `data`).
+   - Đặc tả schema JSON và C# model cho sự kiện mẫu `user.registered.v1`.
+   - Quy tắc đặt tên Topic (`<domain>.<entity>.<version>`), Partition Key (`userId`), và Consumer Group (`<service>.<purpose>-group`).
+   - Xử lý bất biến (Idempotent Consumer) chống trùng lặp thông điệp (At-least-once delivery).
+   - Cơ chế Manual Offset Commit (`EnableAutoCommit = false`) và chống nghẽn bằng Dead-Letter Topic (DLT).
+   - Phân tích rủi ro Dual-Write và giải pháp Transactional Outbox Pattern cho Microservices.
+   - Hướng dẫn thực hành dự án mẫu độc lập tại [`examples/kafka-demo/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/kafka-demo/).
+
+8. 📙 [**Tài liệu 14 — Quy chuẩn Git & Quy trình Làm việc Nhóm (Team Workflow & Git Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md):
    - Quy chuẩn đặt tên Multi-Repository (`f-alumni-*`).
    - Phân công quyền sở hữu mã nguồn chính (Primary Owner) và người duyệt chéo (Reviewer).
    - Chiến lược phân nhánh tinh gọn: `main`, `develop`, `feat/<ticket>-<name>`, `fix/<ticket>-<name>`.
    - Quy trình phối hợp thay đổi Hợp đồng API (Contract Change) và Breaking Changes.
    - Hướng dẫn chi tiết từng bước cho người mới và Mẫu Pull Request chuẩn.
 
-8. 🤝 [**Hướng dẫn Đóng góp (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
+9. 🤝 [**Hướng dẫn Đóng góp (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
    - Quy tắc chung dành cho thành viên khi tham gia đóng góp mã nguồn cho các repository trong tổ chức F-Alumni.
 
 ---
