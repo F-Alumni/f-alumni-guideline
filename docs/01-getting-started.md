@@ -167,11 +167,23 @@ docker compose -f docker/compose.demo.yml down
   `InvalidOperationException: JWT signing key ('Jwt:Key') is missing. Configure it via environment variable 'Jwt__Key'...`
 - **Nguyên nhân**: Để tuân thủ chuẩn an toàn bảo mật, template không lưu cứng khóa ký trong file `appsettings.json` đã commit lên Git.
 - **Cách khắc phục**:
-  - **Trên PowerShell**: Gán biến môi trường trước khi chạy:  
-    `$env:Jwt__Key = "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!"`  
-    `dotnet run --project src/<ServiceName>.Api`
-  - **Dùng .NET User Secrets**: Khởi tạo và lưu bí mật trên máy cá nhân:  
-    `dotnet user-secrets set "Jwt:Key" "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!" --project src/<ServiceName>.Api`
+  > [!WARNING]
+  > **Tuyệt đối không tái sử dụng các chuỗi khóa mẫu trong Git**: Mọi khóa ký từng xuất hiện trong Git history phải coi là đã bị lộ. Hãy sinh một khóa ngẫu nhiên độc lập 256 bits (32 bytes) cho môi trường của bạn:
+
+  - **Cách 1: Gán biến môi trường trên PowerShell**:  
+    ```powershell
+    # Sinh khóa ngẫu nhiên chuẩn mã hóa (32 bytes Base64)
+    $bytes = New-Object byte[] 32; [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes); $randomKey = [Convert]::ToBase64String($bytes)
+    $env:Jwt__Key = $randomKey
+    dotnet run --project src/<ServiceName>.Api
+    ```
+  - **Cách 2: Dùng .NET User Secrets (Khuyên dùng khi code cá nhân)**:  
+    ```powershell
+    $bytes = New-Object byte[] 32; [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes); $randomKey = [Convert]::ToBase64String($bytes)
+    dotnet user-secrets init --project src/<ServiceName>.Api
+    dotnet user-secrets set "Jwt:Key" $randomKey --project src/<ServiceName>.Api
+    dotnet run --project src/<ServiceName>.Api
+    ```
 
 ---
 

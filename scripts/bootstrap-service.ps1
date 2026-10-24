@@ -226,10 +226,11 @@ Write-Host "2. Mo solution bang Visual Studio hoac VS Code:"
 Write-Host "   code ." -ForegroundColor Yellow
 Write-Host "3. Cau hinh chuoi ket noi co so du lieu trong src/$ServiceName.Api/appsettings.Development.json"
 Write-Host "   `"DefaultConnection`": `"Server=localhost;Database=FptAlumni_${ServiceName}_Db;...`"" -ForegroundColor Yellow
-Write-Host "4. Thiet lap JWT signing key qua User Secrets hoac bien moi truong (khong commit vao Git):"
+Write-Host "4. Sinh khoa JWT ngau nhien va thiet lap qua User Secrets hoac bien moi truong (khong commit vao Git):"
+Write-Host "   `$bytes = New-Object byte[] 32; [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes(`$bytes); `$randomKey = [Convert]::ToBase64String(`$bytes)" -ForegroundColor Yellow
 Write-Host "   dotnet user-secrets init --project src/$ServiceName.Api" -ForegroundColor Yellow
-Write-Host "   dotnet user-secrets set `"Jwt:Key`" `"your-super-secret-signing-key-min-32-chars!`" --project src/$ServiceName.Api" -ForegroundColor Yellow
-Write-Host "   hoac tren PowerShell: `$env:Jwt__Key = `"your-super-secret-signing-key-min-32-chars!`"" -ForegroundColor Yellow
+Write-Host "   dotnet user-secrets set `"Jwt:Key`" `$randomKey --project src/$ServiceName.Api" -ForegroundColor Yellow
+Write-Host "   hoac tren PowerShell: `$env:Jwt__Key = `$randomKey" -ForegroundColor Yellow
 Write-Host "5. Doc huong dan chi tiet tao Entity va Migration tai:"
 Write-Host "   docs/04-dotnet-standards.md va docs/05-database.md" -ForegroundColor Yellow
 Write-Host "6. Su dung checklist tai checklists/new-service.md de kiem tra day du cac buoc."

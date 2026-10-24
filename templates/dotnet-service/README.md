@@ -68,22 +68,24 @@ dotnet test
 ```
 
 ### 3. Khởi chạy Web API cục bộ
-Trước khi khởi chạy, cần cung cấp khóa bí mật ký JWT (`Jwt:Key`). Nhằm tuân thủ bảo mật, khóa này **không được lưu cứng** trong `appsettings.json`.
+Trước khi khởi chạy, cần cung cấp khóa bí mật ký JWT (`Jwt:Key`). Nhằm tuân thủ bảo mật, khóa này **không được lưu cứng** trong `appsettings.json` và tuyệt đối **không tái sử dụng bất kỳ chuỗi khóa mẫu nào trong lịch sử Git** (các chuỗi đã commit phải coi là đã bị lộ).
 
-Cung cấp khóa ký thông qua một trong hai cách sau:
-- **Cách 1: Sử dụng biến môi trường (PowerShell)**:
+Hãy tự sinh một khóa bí mật ngẫu nhiên chuẩn mã hóa (256 bits / 32 bytes) thông qua một trong hai cách sau:
+- **Cách 1: Sinh ngẫu nhiên và gán biến môi trường (PowerShell)**:
   ```powershell
-  $env:Jwt__Key = "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!"
+  $bytes = New-Object byte[] 32; [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes); $randomKey = [Convert]::ToBase64String($bytes)
+  $env:Jwt__Key = $randomKey
   dotnet run --project src/Template.Api/Template.Api.csproj
   ```
-- **Cách 2: Sử dụng .NET User Secrets (khuyên dùng khi phát triển)**:
-  ```bash
+- **Cách 2: Sử dụng .NET User Secrets (khuyên dùng khi phát triển máy cá nhân)**:
+  ```powershell
   dotnet user-secrets init --project src/Template.Api
-  dotnet user-secrets set "Jwt:Key" "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!" --project src/Template.Api
+  $bytes = New-Object byte[] 32; [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes); $randomKey = [Convert]::ToBase64String($bytes)
+  dotnet user-secrets set "Jwt:Key" $randomKey --project src/Template.Api
   dotnet run --project src/Template.Api/Template.Api.csproj
   ```
 
-> 💡 **Lưu ý**: Khóa JWT phải có độ dài tối thiểu **32 ký tự / 256 bits** (chuẩn HMAC-SHA256). Nếu thiếu hoặc quá ngắn, ứng dụng sẽ dừng ngay ở bước khởi động với thông báo lỗi rõ ràng. Đối với kiểm thử tự động (`dotnet test`), test fixture `CustomWebApplicationFactory` tự động nạp khóa kiểm thử độc lập mà không cần cấu hình thủ công.
+> 💡 **Lưu ý**: Khóa JWT phải có độ dài tối thiểu **32 bytes / 256 bits** (chuẩn HMAC-SHA256; chuỗi Base64 32 bytes có độ dài 44 ký tự đáp ứng hoàn hảo tiêu chuẩn này). Nếu thiếu hoặc quá ngắn, ứng dụng sẽ dừng ngay ở bước khởi động với thông báo lỗi rõ ràng. Đối với kiểm thử tự động (`dotnet test`), test fixture `CustomWebApplicationFactory` tự động nạp khóa kiểm thử giả lập độc lập mà không cần cấu hình thủ công.
 
 Mặc định ứng dụng sẽ lắng nghe trên cổng HTTP: `http://localhost:5000`.
 

@@ -66,7 +66,7 @@
 - [ ] **Tính Nhất Quán Của Cấu Hình Token**:
   - [ ] Issuer (`Jwt:Issuer`) đồng bộ: `https://identity.falumni.local`.
   - [ ] Audience (`Jwt:Audience`) đồng bộ: `falumni-services`.
-  - [ ] Chuỗi ký đối xứng (`Jwt:Key`) phải giống hệt nhau trên tất cả các dịch vụ có xác thực.
+  - [ ] Chuỗi ký đối xứng (`Jwt:Key`) phải giống hệt nhau trên tất cả các dịch vụ có xác thực (cung cấp qua User Secrets hoặc biến môi trường runtime; TUYỆT ĐỐI KHÔNG commit vào Git hoặc tái sử dụng các khóa demo cũ).
 - [ ] **Cấu Trúc Claim Chuẩn**:
   - [ ] `sub` / `NameIdentifier`: Mã định danh người dùng (`userId`).
   - [ ] `role`: Vai trò tài khoản (`USER` hoặc `ADMIN`).

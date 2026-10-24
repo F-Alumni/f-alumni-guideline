@@ -109,24 +109,44 @@ Token được cấp bởi User Service phải bao gồm đầy đủ các chu�
    ```
 
 3. **Cung cấp khóa ký khi chạy cục bộ (Local Development)**:
-   Mỗi lập trình viên cung cấp khóa ký thông qua cơ chế nạp cấu hình phân tầng của .NET theo một trong hai cách:
+   > [!WARNING]
+   > **Quy tắc bảo mật quan trọng (Compromised Key Rotation)**:
+   > Bất kỳ chuỗi khóa nào từng xuất hiện trong lịch sử commit Git hoặc tài liệu demo đều phải được xem là **đã bị lộ (compromised)**. Lập trình viên **tuyệt đối không sao chép hoặc tái sử dụng** các chuỗi mẫu này trong User Service hay bất kỳ microservice nào.
+   > 
+   > Mỗi môi trường (Local Development, Staging, Production) **phải sở hữu một khóa ký ngẫu nhiên hoàn toàn độc lập**.
+
+   Mỗi lập trình viên tự sinh một khóa bí mật 256 bits (32 bytes) ngẫu nhiên bằng bộ sinh số ngẫu nhiên chuẩn mật mã học (`RandomNumberGenerator`), sau đó nạp qua cấu hình .NET:
 
    - **Cách A: Biến môi trường hệ thống (Windows PowerShell)**:
      ```powershell
-     $env:Jwt__Key = "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!"
+     # 1. Sinh khóa ngẫu nhiên chuẩn mã hóa (32 bytes ngẫu nhiên mã hóa Base64 = 44 ký tự)
+     $bytes = New-Object byte[] 32; [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes); $randomKey = [Convert]::ToBase64String($bytes)
+
+     # 2. Gán vào biến môi trường phiên làm việc
+     $env:Jwt__Key = $randomKey
+
+     # 3. Khởi chạy service
      dotnet run --project src/Template.Api/Template.Api.csproj
      ```
      *(Lưu ý: Dấu hai chấm `:` trong .NET configuration được chuyển thành hai dấu gạch dưới `__` khi đặt tên biến môi trường).*
 
-   - **Cách B: .NET User Secrets (Khuyên dùng cho máy cá nhân)**:
+   - **Cách B: .NET User Secrets (Khuyên dùng khi phát triển cá nhân)**:
      ```powershell
-     # Khởi tạo user-secrets cho project API (nếu chưa có)
+     # 1. Khởi tạo User Secrets cho project API (nếu chưa có)
      dotnet user-secrets init --project src/Template.Api
 
-     # Thiết lập khóa ký
-     dotnet user-secrets set "Jwt:Key" "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!" --project src/Template.Api
+     # 2. Sinh khóa ngẫu nhiên và lưu an toàn ngoài thư mục Git
+     $bytes = New-Object byte[] 32; [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes); $randomKey = [Convert]::ToBase64String($bytes)
+     dotnet user-secrets set "Jwt:Key" $randomKey --project src/Template.Api
 
-     # Khởi chạy ứng dụng
+     # 3. Khởi chạy ứng dụng
+     dotnet run --project src/Template.Api/Template.Api.csproj
+     ```
+
+   - **Cách C: Dành cho Linux / macOS (Bash/Zsh)**:
+     ```bash
+     export Jwt__Key=$(openssl rand -base64 32)
+     dotnet user-secrets set "Jwt:Key" "$Jwt__Key" --project src/Template.Api
      dotnet run --project src/Template.Api/Template.Api.csproj
      ```
 
@@ -150,6 +170,8 @@ Token được cấp bởi User Service phải bao gồm đầy đủ các chu�
 5. **Cơ chế nạp khóa trong Kiểm thử Tự động (Automated Tests)**:
    Các bài kiểm thử tích hợp (integration tests) không phụ thuộc vào biến môi trường máy host hay User Secrets. Lớp `CustomWebApplicationFactory` tự động inject khóa kiểm thử cục bộ:
    ```csharp
+   // KHÓA ĐỊNH DANH DÀNH RIÊNG CHO TEST FIXTURE (DETERMINISTIC TEST KEY).
+   // CẢNH BÁO: CHỈ SỬ DỤNG TRONG AUTOMATED TESTS (xUnit). TUYỆT ĐỐI KHÔNG SỬ DỤNG TRONG RUNTIME HOẶC PRODUCTION!
    public const string TestJwtSecret = "TestFixtureDeterministicKey_AtLeast32BytesLong_PRN232_ASM_2026!";
 
    protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -158,9 +180,14 @@ Token được cấp bởi User Service phải bao gồm đầy đủ các chu�
        builder.UseSetting("Jwt:Key", TestJwtSecret);
    }
    ```
-   Nhờ đó, lệnh `dotnet test` luôn chạy độc lập, đáng tin cậy và đạt 100% pass trên mọi máy tính của thành viên và CI/CD.
+   Nhờ đó, lệnh `dotnet test` luôn chạy độc lập, đáng tin cậy và đạt 100% pass trên mọi máy tính của thành viên và CI/CD mà không ảnh hưởng đến bí mật môi trường thực tế.
 
-6. **Dung sai thời gian (Clock Tolerance / ClockSkew)**:
+6. **Nguyên Tắc Quản Lý Bí Mật Trong Production vs Local Development**:
+   - **Local Development**: Dùng **.NET User Secrets** (`%APPDATA%\Microsoft\UserSecrets`) hoặc biến môi trường cục bộ `$env:Jwt__Key`. Không bao giờ commit lên GitHub.
+   - **Production / Deployment**: Phải nạp từ nguồn cấu hình bảo mật thời gian chạy (Runtime Secrets), ví dụ: Docker Compose environment mapping từ file `.env` không commit, Kubernetes Secrets, hoặc CI/CD pipeline environment variables.
+   - **Khi nghi ngờ lộ khóa (Compromise Rotation)**: Phải lập tức đổi khóa mới trên User Service và đồng bộ sang tất cả các resource services (Chat, Forum, AI, Admin). Mọi JWT cũ được ký bằng khóa cũ sẽ bị từ chối tự động (`401 Unauthorized`), buộc người dùng phải đăng nhập lại để nhận token mới an toàn.
+
+7. **Dung sai thời gian (Clock Tolerance / ClockSkew)**:
    - Được thiết lập tối đa **1 phút** (`TimeSpan.FromMinutes(1)`) để bù trừ độ lệch đồng hồ giữa các máy tính khác nhau của sinh viên trong nhóm.
 
 ---
