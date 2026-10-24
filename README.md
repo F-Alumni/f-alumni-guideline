@@ -5,8 +5,9 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B.svg)](https://flutter.dev/)
 [![SQL Server](https://img.shields.io/badge/Database-SQL_Server-red.svg)](https://www.microsoft.com/sql-server)
 [![Kafka](https://img.shields.io/badge/Message_Broker-Apache_Kafka-black.svg)](https://kafka.apache.org/)
+[![Status](https://img.shields.io/badge/Guideline_Verification-100%25_PASS-brightgreen.svg)](scripts/verify-all.ps1)
 
-Chào mừng bạn đến với kho tài liệu hướng dẫn kỹ thuật và kiến trúc chuẩn chính thức của dự án **FPT Alumni Connect** — Đồ án tốt nghiệp môn **PRN232**.
+Chào mừng bạn đến với kho tài liệu hướng dẫn kỹ thuật, kiến trúc chuẩn và bộ công cụ tự động hóa chính thức của dự án **FPT Alumni Connect** — Đồ án thực hành môn học **PRN232** tại Đại học FPT.
 
 ---
 
@@ -20,33 +21,50 @@ Chào mừng bạn đến với kho tài liệu hướng dẫn kỹ thuật và 
 - **Kiến trúc mã nguồn**: **Layered Architecture (3 tầng chuẩn mực: API $\rightarrow$ Services $\rightarrow$ Repositories)**. Tuyệt đối tránh sự phức tạp quá mức (avoid overengineering) của Clean Architecture / CQRS / Event Sourcing doanh nghiệp lớn để phù hợp với đồ án sinh viên.
 - **Tổ chức Repository & Dữ liệu**:
   - Các service độc lập với nhau (Independent service repositories).
-  - Sử dụng chung **1 instance SQL Server**, nhưng **tách riêng từng Database độc lập cho từng service** (`FAlumni_User_Db`, `FAlumni_Chat_Db`, `FAlumni_Forum_Db`, `FAlumni_AI_Db`, `FAlumni_Admin_Db`).
+  - Sử dụng chung **1 instance SQL Server**, nhưng **tách riêng từng Database độc lập cho từng service** (`FptAlumni_User_Db`, `FptAlumni_Chat_Db`, `FptAlumni_Forum_Db`, `FptAlumni_AI_Db`, `FptAlumni_Admin_Db`).
   - **Quy tắc bất biến**: Tuyệt đối **KHÔNG** truy cập trực tiếp bảng dữ liệu của service khác (Zero cross-database access).
-- **Cổng giao tiếp**: Một **API Gateway** duy nhất phục vụ chung cho cả Web Client và Mobile Client.
+- **Cổng giao tiếp**: Một **API Gateway (Microsoft YARP)** duy nhất phục vụ chung cho cả Web Client và Mobile Client tại cổng `5000`.
 - **Giao thức kết nối**:
   - **REST API**: Giao tiếp chuẩn cho Client $\leftrightarrow$ API Gateway và các tác vụ CRUD thông thường.
-  - **gRPC**: Giao tiếp đồng bộ hiệu năng cao giữa **Chat Service $\rightarrow$ User Service** để tra cứu hồ sơ người dùng tức thời khi tải tin nhắn.
-  - **Apache Kafka**: Xử lý các sự kiện nghiệp vụ bất đồng bộ (Domain Events: `UserRegistered`, `UserSuspended`, `PostCreated`, v.v.).
+  - **gRPC**: Giao tiếp đồng bộ hiệu năng cao (HTTP/2 binary) giữa **Chat Service $\rightarrow$ User Service** để tra cứu hồ sơ người dùng tức thời khi tải tin nhắn.
+  - **Apache Kafka**: Xử lý các sự kiện nghiệp vụ bất đồng bộ (Domain Events: `user.registered.v1`, `user.suspended.v1`, v.v.).
   - **SignalR (WebSockets)**: Kênh giao tiếp thời gian thực cho tin nhắn trò chuyện (Chat) và thông báo diễn đàn (Forum).
-  - **Background Worker**: Một dịch vụ chạy ngầm độc lập (.NET Worker Service) tiêu thụ sự kiện từ Kafka để gửi email thông báo/OTP qua SMTP.
+  - **Background Worker**: Dịch vụ chạy ngầm độc lập (.NET Worker Service) tiêu thụ sự kiện từ Kafka để gửi email thông báo/OTP giả lập.
 
 ---
 
-## 🏛️ 2. Sơ đồ Kiến trúc Tổng thể (System Architecture)
+## 🗺️ 2. Lộ Trình 5 Ngày Dành Cho Người Mới Bắt Đầu (Beginner Learning Path)
+
+Dành cho sinh viên lần đầu tiếp cận Microservices, hãy làm theo lộ trình 5 ngày sau:
+
+```mermaid
+flowchart TD
+    Day1["Ngày 1: Đọc hiểu Kiến trúc & Quy chuẩn Git\n(docs/01, 02, 03, 14, CONTRIBUTING.md)"]
+    Day2["Ngày 2: Bootstrap Microservice & EF Core\n(scripts/bootstrap-service.ps1, docs/04, 05, 06)"]
+    Day3["Ngày 3: Tích hợp Đồng bộ gRPC & Bất đồng bộ Kafka\n(docs/07, 08, 09, 10, contracts/)"]
+    Day4["Ngày 4: Đóng gói Docker & Cấu hình API Gateway\n(docs/11, 12, 13, docker/compose.demo.yml)"]
+    Day5["Ngày 5: Kiểm tra Checklist & Diễn tập Báo cáo Đồ án\n(checklists/new-service, integration, asm-demo)"]
+
+    Day1 --> Day2 --> Day3 --> Day4 --> Day5
+```
+
+---
+
+## 🏛️ 3. Sơ đồ Kiến trúc Tổng thể (System Architecture)
 
 ```mermaid
 flowchart TD
     subgraph Clients["Tầng Khách hàng (Clients)"]
-        Web["Web Portal\n(React 18 + Vite + TS)"]
-        Mobile["Mobile App\n(Flutter)"]
+        Web["Web Portal\n(React 18 + Vite + TS)\nhttp://localhost:3000"]
+        Mobile["Mobile App\n(Flutter)\nAndroid / iOS"]
     end
 
     subgraph Gateway["Cổng API Tập trung"]
-        ApiGateway["API Gateway (YARP)\nPort: 5000"]
+        ApiGateway["API Gateway (Microsoft YARP)\nPort: 5000\n[CORS, JWT Offload, Path Rewrite]"]
     end
 
     subgraph Microservices["Các Dịch vụ Độc lập (.NET 10 Layered Architecture)"]
-        UserSvc["User Service (:5001)\nAuth, Profiles, Directory\n[gRPC Server]"]
+        UserSvc["User Service (:5001)\nAuth, Profiles, Directory\n[gRPC Server :50051]"]
         ChatSvc["Chat Service (:5002)\n1-1 & Group Chats\n[SignalR Hub, gRPC Client]"]
         ForumSvc["Forum Service (:5003)\nPosts, Comments, Reactions\n[SignalR Hub]"]
         AiSvc["AI Service (:5004)\nMentorship, FAQ Assistant"]
@@ -54,20 +72,20 @@ flowchart TD
     end
 
     subgraph AsyncWorker["Xử lý Tác vụ Nền (Background Worker)"]
-        NotiWorker["Notification Worker\n(Kafka Consumer -> Email SMTP)"]
+        NotiWorker["Notification Worker\n(Kafka Consumer -> Email Mock)"]
     end
 
     subgraph InfraBroker["Hạ tầng Thông điệp & Real-Time"]
-        Kafka[("Apache Kafka Broker")]
+        Kafka[("Apache Kafka Broker\nPort: 9092 / 29092")]
         SignalR["SignalR WebSockets (ChatHub, ForumHub)"]
     end
 
     subgraph Storage["Cơ sở Dữ liệu (1 Instance SQL Server)"]
-        DB_User[("FAlumni_User_Db")]
-        DB_Chat[("FAlumni_Chat_Db")]
-        DB_Forum[("FAlumni_Forum_Db")]
-        DB_AI[("FAlumni_AI_Db")]
-        DB_Admin[("FAlumni_Admin_Db")]
+        DB_User[("FptAlumni_User_Db")]
+        DB_Chat[("FptAlumni_Chat_Db")]
+        DB_Forum[("FptAlumni_Forum_Db")]
+        DB_AI[("FptAlumni_AI_Db")]
+        DB_Admin[("FptAlumni_Admin_Db")]
     end
 
     %% Client flows
@@ -77,14 +95,15 @@ flowchart TD
     Mobile -.->|WSS / Real-time| SignalR
 
     %% Gateway to services
-    ApiGateway --> UserSvc
-    ApiGateway --> ChatSvc
-    ApiGateway --> ForumSvc
-    ApiGateway --> AiSvc
-    ApiGateway --> AdminSvc
+    ApiGateway -->|/api/v1/users/*| UserSvc
+    ApiGateway -->|/api/v1/chats/*| ChatSvc
+    ApiGateway -->|/api/chat/* (Rewrite)| ChatSvc
+    ApiGateway -->|/api/v1/forum/*| ForumSvc
+    ApiGateway -->|/api/v1/ai/*| AiSvc
+    ApiGateway -->|/api/v1/admin/*| AdminSvc
 
     %% Inter-service Sync
-    ChatSvc -->|"Sync gRPC Lookup"| UserSvc
+    ChatSvc -->|"Sync gRPC HTTP/2:50051"| UserSvc
     AdminSvc -->|"Authorized REST API: Suspend User"| UserSvc
 
     %% Database mapping
@@ -99,18 +118,18 @@ flowchart TD
     ForumSvc --- SignalR
 
     %% Kafka Events
-    UserSvc -.->|"Publish Event"| Kafka
-    ForumSvc -.->|"Publish Event"| Kafka
-    ChatSvc -.->|"Publish Event"| Kafka
-    AdminSvc -.->|"Publish Event"| Kafka
+    UserSvc -.->|"user.registered.v1"| Kafka
+    ForumSvc -.->|"post.created.v1"| Kafka
+    ChatSvc -.->|"message.sent.v1"| Kafka
+    AdminSvc -.->|"user.suspended.v1"| Kafka
 
-    Kafka -.->|"Consume Event"| NotiWorker
-    Kafka -.->|"Consume Event"| AiSvc
+    Kafka -.->|"Consume"| NotiWorker
+    Kafka -.->|"Consume"| AiSvc
 ```
 
 ---
 
-## 👥 3. Phân chia Trách nhiệm Đội ngũ (Team Roles & Responsibilities)
+## 👥 4. Phân chia Trách nhiệm Đội ngũ (Team Roles & Responsibilities)
 
 | Thành viên | Vai trò | Trách nhiệm chính trong đồ án |
 | :--- | :--- | :--- |
@@ -122,113 +141,120 @@ flowchart TD
 
 ---
 
-## 📚 4. Thư mục Tài liệu Hướng dẫn Chi tiết (Documentation Index)
+## 📚 5. Danh Mục Tài Liệu Hệ Thống (Documentation Index)
 
-Toàn bộ quy chuẩn và đặc tả chi tiết của dự án được lưu trữ trong thư mục `docs/`:
+Toàn bộ quy chuẩn và tài liệu kỹ thuật được đánh số thứ tự logic trong thư mục `docs/`:
 
-1. 📘 [**Tài liệu 02 — Kiến trúc Hệ thống (System Architecture)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/02-architecture.md):
+1. 🚀 [**Tài liệu 01 — Hướng dẫn Tiếp cận & Bắt đầu Cho Người Mới (Getting Started)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/01-getting-started.md):
+   - Cài đặt công cụ (.NET 10, Docker, Git, SQL Server), lộ trình tiếp cận 5 ngày và cẩm nang xử lý lỗi thường gặp.
+2. 📘 [**Tài liệu 02 — Kiến trúc Hệ thống (System Architecture)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/02-architecture.md):
    - Mô tả chi tiết cấu trúc 3 tầng (Layered Architecture: API $\rightarrow$ Services $\rightarrow$ Repositories).
    - Quy tắc bất di bất dịch về cô lập cơ sở dữ liệu (Zero Cross-DB Access).
    - Ma trận giao thức giao tiếp (REST, gRPC, Kafka, SignalR).
-   - Sơ đồ tuần tự nghiệp vụ Admin khóa tài khoản người dùng qua API ủy quyền.
-   - Sơ đồ tuần tự quy trình đăng ký & gửi email xác thực tài khoản (End-to-End Email Verification).
-   - Bảng phân biệt giữa Hạ tầng kỹ thuật bắt buộc của môn học (Required ASM Infrastructure) và các Tính năng nghiệp vụ.
-
-2. 📗 [**Tài liệu 03 — Ranh giới Dịch vụ & Phân loại User Stories (Service Boundaries & User Stories)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/03-service-boundaries.md):
+   - Sơ đồ tuần tự nghiệp vụ Admin khóa tài khoản và Đăng ký gửi email xác thực.
+3. 📗 [**Tài liệu 03 — Ranh giới Dịch vụ & Phân loại User Stories (Service Boundaries & User Stories)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/03-service-boundaries.md):
    - Ranh giới nghiệp vụ cụ thể cho từng dịch vụ (Nên làm gì & Không được làm gì).
-   - Bảng sở hữu cơ sở dữ liệu và danh mục các bảng dữ liệu cốt lõi.
-   - Danh sách và ma trận phân loại toàn bộ **50 User Stories**:
-     - **US-01 đến US-11**: Tài khoản & Hồ sơ cựu sinh viên (User Service).
-     - **CH-01 đến CH-10**: Trò chuyện thời gian thực (Chat Service).
-     - **FO-01 đến FO-16**: Diễn đàn & Kết nối cộng đồng (Forum Service).
-     - **AI-01 đến AI-04**: Trợ lý thông minh & Khuyến nghị (AI Service).
-     - **AD-01 đến AD-09**: Quản trị hệ thống & Kiểm duyệt (Admin Service).
-   - Phân cấp mức độ ưu tiên: **P0 (Must Have - Cốt lõi MVP)**, **P1 (Should Have - Tiêu chuẩn đồ án)**, **P2 (Nice to Have - Nâng cao)**.
-
-3. 📕 [**Tài liệu 04 — Quy chuẩn Phát triển .NET 10 & Kiến trúc Phân tầng (Layered Architecture Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/04-dotnet-standards.md):
+   - Bảng sở hữu cơ sở dữ liệu và danh mục toàn bộ **50 User Stories** phân loại P0, P1, P2.
+4. 📕 [**Tài liệu 04 — Quy chuẩn Phát triển .NET 10 & Kiến trúc Phân tầng (Layered Architecture Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/04-dotnet-standards.md):
    - Chuẩn hóa cấu trúc thư mục 3 tầng: `Api` $\rightarrow$ `Services` $\rightarrow$ `Repositories`.
-   - Quy tắc ràng buộc phụ thuộc nghiêm ngặt (Controller không được phụ thuộc trực tiếp vào Repository).
-   - Quy chuẩn đặt tên C# (.NET 10), xử lý ngoại lệ tập trung qua Middleware (RFC 7807), logging và health checks.
-   - Hướng dẫn sao chép và đổi tên template tại `templates/dotnet-service/` cho các service mới.
-
-4. 💾 [**Tài liệu 05 — Quy chuẩn Cơ sở Dữ liệu & EF Core (Database & EF Core Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/05-database.md):
-   - Nguyên tắc Database-per-Service trên 1 instance SQL Server (`FAlumni_*_Db`).
-   - Nghiêm cấm chia sẻ DbContext, cấm cross-database query và cấm foreign key liên database.
-   - Quy định tham chiếu dữ liệu qua Scalar ID hoặc contract (gRPC/Kafka).
+   - Quy tắc ràng buộc phụ thuộc nghiêm ngặt và xử lý ngoại lệ tập trung qua Middleware (RFC 7807).
+5. 💾 [**Tài liệu 05 — Quy chuẩn Cơ sở Dữ liệu & EF Core (Database & EF Core Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/05-database.md):
+   - Nguyên tắc Database-per-Service trên 1 instance SQL Server (`FptAlumni_*_Db`).
    - Quản lý EF Core Migrations cho môi trường Local Dev vs Deployment (Idempotent SQL Scripts).
-
-5. 🌐 [**Tài liệu 06 — Quy chuẩn Thiết kế REST API & OpenAPI (REST API & Contract Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/06-rest-api.md):
+6. 🌐 [**Tài liệu 06 — Quy chuẩn Thiết kế REST API & OpenAPI (REST API & Contract Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/06-rest-api.md):
    - Quy chuẩn định tuyến URL `/api/v1/{resources}`, phương thức HTTP và mã trạng thái chuẩn.
-   - Định dạng phản hồi lỗi chuẩn RFC 7807 (`ProblemDetails`) kèm `traceId`.
-   - Tiêu chuẩn phân trang (`PagedResponse<T>`), tìm kiếm và sắp xếp.
-   - Chuẩn hóa tài liệu OpenAPI / Swagger qua XML comments và attributes.
-
-6. 🔐 [**Tài liệu 07 — Hợp đồng Xác thực & Phân quyền JWT (JWT Authentication & Authorization Contract)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/07-authentication.md):
-   - Xác định User Service là thẩm quyền duy nhất (Sole Authority) cấp phát JWT.
-   - Đặc tả chuẩn các claims: `sub`, `email`, `role` (`USER`, `ADMIN`), `status`, `iss`, `aud`, `exp`.
+   - Định dạng phản hồi lỗi chuẩn RFC 7807 (`ProblemDetails`) kèm `traceId` và phân trang chuẩn.
+7. 🔐 [**Tài liệu 07 — Hợp đồng Xác thực & Phân quyền JWT (JWT Authentication & Authorization Contract)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/07-authentication.md):
+   - Xác định User Service là thẩm quyền duy nhất cấp phát JWT.
+   - Đặc tả chuẩn các claims: `sub`, `email`, `role` (`USER`, `ADMIN`).
    - Cấu hình ký HS256 qua configuration và dung sai thời gian (ClockSkew).
-   - Quy định trích xuất định danh từ Claims (chống header spoofing) và xử lý 401/403 cho Web/Flutter.
-
-7. 📨 [**Tài liệu 08 — Hợp đồng Sự kiện Kafka & Xử lý Bất đồng bộ (Kafka Event Contracts & Async Processing)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/08-kafka.md):
+8. 📨 [**Tài liệu 08 — Hợp đồng Sự kiện Kafka & Xử lý Bất đồng bộ (Kafka Event Contracts & Async Processing)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/08-kafka.md):
    - Chuẩn hóa cấu trúc phong bì sự kiện chung `EventEnvelope<T>` (`eventId`, `eventType`, `version`, `occurredAt`, `correlationId`, `producer`, `data`).
    - Đặc tả schema JSON và C# model cho sự kiện mẫu `user.registered.v1`.
-   - Quy tắc đặt tên Topic (`<domain>.<entity>.<version>`), Partition Key (`userId`), và Consumer Group (`<service>.<purpose>-group`).
-   - Xử lý bất biến (Idempotent Consumer) chống trùng lặp thông điệp (At-least-once delivery).
-   - Cơ chế Manual Offset Commit (`EnableAutoCommit = false`) và chống nghẽn bằng Dead-Letter Topic (DLT).
-   - Phân tích rủi ro Dual-Write và giải pháp Transactional Outbox Pattern cho Microservices.
    - Hướng dẫn thực hành dự án mẫu độc lập tại [`examples/kafka-demo/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/kafka-demo/).
-
-8. ⚡ [**Tài liệu 09 — Quy chuẩn Giao tiếp Đồng bộ gRPC & Tra cứu Hồ sơ (Chat-to-User gRPC Profile Lookup)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/09-grpc.md):
-   - Phân tích kiến trúc tại sao dùng gRPC (HTTP/2 + Protobuf) cho giao tiếp nội bộ thay vì REST.
-   - Lý do Web Portal và Mobile App không gọi gRPC trực tiếp (Ranh giới bảo mật & hạn chế trình duyệt).
-   - Định nghĩa hợp đồng Protobuf v1 tại [`contracts/grpc/user-profile/v1/user_profile.proto`](file:///c:/Use/University/PRN232/ASM/guideline/contracts/grpc/user-profile/v1/user_profile.proto) (`GetUserSummary`).
-   - Nguyên tắc đóng gói dữ liệu tối thiểu (`userId`, `displayName`, `avatarUrl`, `status`) và cấm rò rỉ dữ liệu nhạy cảm.
-   - Xử lý lỗi chuẩn RFC 7807 (`ProblemDetails`) từ `RpcException` (NotFound 404, Unavailable 503, DeadlineExceeded 504).
+9. ⚡ [**Tài liệu 09 — Quy chuẩn Giao tiếp Đồng bộ gRPC & Tra cứu Hồ sơ (Chat-to-User gRPC Profile Lookup)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/09-grpc.md):
+   - Định nghĩa hợp đồng Protobuf v1 tại [`contracts/grpc/user-profile/v1/user_profile.proto`](file:///c:/Use/University/PRN232/ASM/guideline/contracts/grpc/user-profile/v1/user_profile.proto).
+   - Xử lý lỗi chuẩn RFC 7807 (`ProblemDetails`) từ `RpcException` và cơ chế fallback an toàn.
    - Hướng dẫn chạy thử nghiệm dự án mẫu độc lập tại [`examples/grpc-demo/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/grpc-demo/).
-
-9. 📬 [**Tài liệu 10 — Quy chuẩn Dịch vụ Xử lý Tác vụ Nền & Gửi Email (Notification Background Worker)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/10-background-worker.md):
-   - Tách rời luồng gửi email tốn thời gian ra khỏi HTTP Request của User Service bằng `.NET BackgroundService`.
-   - Tiêu thụ sự kiện `user.registered.v1` từ Kafka mà không thay đổi schema hợp đồng.
-   - Trừu tượng hóa `IEmailSender` và `MockEmailSender` (Dev) có che giấu thông tin nhạy cảm.
-   - Cơ chế bảo mật Opaque Verification Reference & thẩm quyền duy nhất của User Service về sinh/xác thực mã OTP.
-   - Quy chuẩn ghi nhật ký an toàn (Safe Logging): Bắt buộc log `eventId`, `correlationId`, nhưng TUYỆT ĐỐI KHÔNG log mã OTP.
-   - Xử lý tắt ứng dụng an toàn (Graceful Shutdown), khử trùng lặp (Idempotent), và chính sách commit offset khi gửi mail thành công/thất bại.
-   - Hướng dẫn thay thế nhà cung cấp email thực tế (SMTP/MailKit/SendGrid) và dự án mẫu tại [`examples/demo-worker/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/demo-worker/).
-
-10. 🚪 [**Tài liệu 11 — Quy chuẩn Cổng API Tập trung với YARP (Central API Gateway Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/11-api-gateway.md):
-    - Điểm truy cập duy nhất (Single Entrypoint) cho Web Portal (React 18) và Mobile App (Flutter) tại cổng `5000`.
-    - Kiến trúc Reverse Proxy bằng Microsoft YARP, cấu hình chuyển tiếp `/api/v1/chats/*` và biến đổi đường dẫn `/api/chat/*`.
-    - Ranh giới bảo mật mạng nội bộ: CORS tập trung, kiểm tra JWT tập trung, rate limiting và che giấu địa chỉ topology nội bộ.
+10. 📬 [**Tài liệu 10 — Quy chuẩn Dịch vụ Xử lý Tác vụ Nền & Gửi Email (Notification Background Worker)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/10-background-worker.md):
+    - Tách rời luồng gửi email tốn thời gian ra khỏi HTTP Request bằng `.NET BackgroundService`.
+    - Tiêu thụ sự kiện `user.registered.v1` từ Kafka và cơ chế khử trùng lặp (Idempotent Consumer).
+    - Dự án mẫu tại [`examples/demo-worker/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/demo-worker/).
+11. 🚪 [**Tài liệu 11 — Quy chuẩn Cổng API Tập trung với YARP (Central API Gateway Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/11-api-gateway.md):
+    - Điểm truy cập duy nhất cho Web và Mobile tại cổng `5000`.
+    - Kiến trúc Reverse Proxy bằng Microsoft YARP, chuyển tiếp và biến đổi đường dẫn URL.
     - Dự án mẫu độc lập tại [`examples/gateway-demo/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/gateway-demo/).
-
-11. 🐳 [**Tài liệu 12 — Quy chuẩn Đóng gói Container & Docker Compose (Docker & Containerization Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/12-docker.md):
+12. 🐳 [**Tài liệu 12 — Quy chuẩn Đóng gói Container & Docker Compose (Docker & Containerization Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/12-docker.md):
     - Đóng gói toàn bộ hệ sinh thái mẫu thành một hệ thống chạy cục bộ qua [`docker/compose.demo.yml`](file:///c:/Use/University/PRN232/ASM/guideline/docker/compose.demo.yml).
-    - Phân biệt địa chỉ mạng nội bộ container (`chat-service:5002`, `user-grpc-server:50051`, `kafka:9092`) và địa chỉ máy chủ host (`localhost:5000`, `localhost:29092`).
+    - Phân biệt địa chỉ mạng nội bộ container và địa chỉ máy chủ host.
     - Bảo toàn kết nối gRPC HTTP/2 nhị phân giữa các container trong Docker bridge network.
-    - Quản lý biến môi trường an toàn qua [`docker/.env.example`](file:///c:/Use/University/PRN232/ASM/guideline/docker/.env.example) và thứ tự phụ thuộc khởi động (`depends_on`).
-    - Phân định rõ ràng: `compose.demo.yml` là bản trình diễn mẫu trong guideline; cấu hình production chính thức thuộc repo `fpt-alumni-infra`.
-
-12. 📙 [**Tài liệu 14 — Quy chuẩn Git & Quy trình Làm việc Nhóm (Team Workflow & Git Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md):
+13. 🧪 [**Tài liệu 13 — Chiến Lược & Quy Chuẩn Kiểm Thử Hệ Thống (Testing Standards & Verification Guide)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/13-testing.md):
+    - Tháp kiểm thử Microservices (Unit, Integration, End-to-End).
+    - Kỹ thuật kiểm thử API với `WebApplicationFactory` sử dụng In-Memory database out-of-the-box.
+    - Hướng dẫn thực thi 54 bài kiểm thử tự động đạt 100% PASS.
+14. 📙 [**Tài liệu 14 — Quy chuẩn Git & Quy trình Làm việc Nhóm (Team Workflow & Git Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md):
     - Quy chuẩn đặt tên Multi-Repository (`f-alumni-*`).
-    - Phân công quyền sở hữu mã nguồn chính (Primary Owner) và người duyệt chéo (Reviewer).
     - Chiến lược phân nhánh tinh gọn: `main`, `develop`, `feat/<ticket>-<name>`, `fix/<ticket>-<name>`.
-    - Quy trình phối hợp thay đổi Hợp đồng API (Contract Change) và Breaking Changes.
-    - Hướng dẫn chi tiết từng bước cho người mới và Mẫu Pull Request chuẩn.
-
-13. 🤝 [**Hướng dẫn Đóng góp (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
-    - Quy tắc chung dành cho thành viên khi tham gia đóng góp mã nguồn cho các repository trong tổ chức F-Alumni.
+    - Quy trình phối hợp thay đổi Hợp đồng API (Contract Change) và Mẫu Pull Request chuẩn.
+15. 🤝 [**Hướng dẫn Đóng góp Mã Nguồn (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
+    - Quy tắc chung dành cho thành viên khi đóng góp mã nguồn cho các repository trong tổ chức F-Alumni.
 
 ---
 
-## 🚀 5. Hướng dẫn Dành cho Lập trình viên Mới (Beginner Developer Quickstart)
+## ✅ 6. Danh Mục Bảng Kiểm Tra Chất Lượng (Checklists Index)
 
-1. **Clone repository và đọc kỹ tài liệu**:
-   - Mọi thành viên cần đọc kỹ [docs/02-architecture.md](file:///c:/Use/University/PRN232/ASM/guideline/docs/02-architecture.md), [docs/04-dotnet-standards.md](file:///c:/Use/University/PRN232/ASM/guideline/docs/04-dotnet-standards.md) và [docs/14-team-workflow.md](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md) trước khi viết dòng code đầu tiên.
-2. **Khởi tạo Service từ Template**:
-   - Các thành viên Backend copy khung dự án chuẩn từ [templates/dotnet-service/](file:///c:/Use/University/PRN232/ASM/guideline/templates/dotnet-service/) vào repository của mình theo hướng dẫn tại [templates/dotnet-service/README.md](file:///c:/Use/University/PRN232/ASM/guideline/templates/dotnet-service/README.md).
-3. **Quy tắc làm việc với Git**:
-   - Bắt đầu tính năng mới bằng cách checkout nhánh `develop`, tạo nhánh `feat/<ticket>-<tên_tính_năng>`, và mở Pull Request vào `develop` theo [CONTRIBUTING.md](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md).
-4. **Quy tắc tạo bảng và liên kết**:
-   - Nếu bạn làm việc trên `Chat Service` hoặc `Forum Service`, bạn chỉ được lưu `UserId` dưới dạng số nguyên (`int`) hoặc `Guid`. Tuyệt đối không tạo Foreign Key sang bảng `Users` của service khác.
-5. **Quy tắc giao tiếp**:
-   - Khi cần dữ liệu của service khác: Nếu cần phản hồi tức thì để hiển thị giao diện, hãy sử dụng **gRPC / REST API**. Nếu chỉ cần thông báo sự kiện đã hoàn tất, hãy phát thông điệp lên **Kafka**.
+Trước khi gửi Pull Request hoặc bước vào buổi chấm thi, sinh viên bắt buộc phải rà soát các checklist sau:
+
+1. 📋 [**Checklist 01 — Triển Khai Microservice Mới (New Service Checklist)**](file:///c:/Use/University/PRN232/ASM/guideline/checklists/new-service.md):
+   - Danh sách kiểm tra 7 giai đoạn từ nhận ticket, bootstrap, tạo Entity/Migration đến viết unit tests.
+2. 🔗 [**Checklist 02 — Tích Hợp Giữa Các Microservices (Integration Checklist)**](file:///c:/Use/University/PRN232/ASM/guideline/checklists/integration.md):
+   - Kiểm tra định tuyến Gateway, gRPC HTTP/2, Kafka Event Envelope, Database Isolation và JWT.
+3. 🎓 [**Checklist 03 — Kịch Bản & Bảng Kiểm Tra Buổi Báo Cáo Đồ Án PRN232 (ASM Demo Checklist)**](file:///c:/Use/University/PRN232/ASM/guideline/checklists/asm-demo.md):
+   - Bản đồ khớp nối tiêu chí chấm điểm (REST, EF Core, JWT, gRPC, Kafka, Background Worker, Gateway, Docker).
+   - Kịch bản trình diễn chi tiết 5 bước kéo dài 10–15 phút kèm câu lệnh mẫu và kết quả mong đợi.
+
+---
+
+## 🛠️ 7. Bộ Kịch Bản Tự Động Hóa (Automation Scripts)
+
+Dự án cung cấp sẵn 3 kịch bản PowerShell giúp tối ưu hóa 100% thời gian khởi tạo và kiểm thử:
+
+### 1. Khởi tạo Microservice Mới (`scripts/bootstrap-service.ps1`)
+Sao chép mẫu chuẩn 3 tầng, tự động đổi tên toàn bộ namespace, project, solution và cấu hình kiểm thử In-Memory độc lập:
+```powershell
+.\scripts\bootstrap-service.ps1 -ServiceName "ForumService" -TargetDirectory "..\fpt-alumni-forum-service"
+```
+
+### 2. Xác minh Toàn diện Hệ thống (`scripts/verify-all.ps1`)
+Biên dịch 5 solution, kiểm tra cấu hình tĩnh và chạy toàn bộ 54 ca kiểm thử tự động:
+```powershell
+# Chạy toàn bộ kiểm tra:
+.\scripts\verify-all.ps1
+
+# Chỉ kiểm tra biên dịch và cấu hình, bỏ qua chạy test:
+.\scripts\verify-all.ps1 -SkipTests
+```
+
+### 3. Kiểm thử Khói Tích Hợp (`scripts/smoke-test.ps1`)
+Kiểm tra luồng kết nối end-to-end `Gateway -> Chat REST -> User gRPC` và `Kafka -> Notification Worker`:
+```powershell
+.\scripts\smoke-test.ps1
+```
+
+---
+
+## 🚀 8. Lệnh Khởi Chạy Nhanh Toàn Bộ Hệ Thống Với Docker
+
+```powershell
+# 1. Tạo tệp môi trường từ mẫu
+Copy-Item docker/.env.example docker/.env
+
+# 2. Khởi chạy toàn bộ hệ thống
+docker compose --env-file docker/.env -f docker/compose.demo.yml up --build -d
+
+# 3. Chạy smoke test kiểm tra hệ thống
+.\scripts\smoke-test.ps1
+
+# 4. Tắt hệ thống sau khi làm việc xong
+docker compose -f docker/compose.demo.yml down
+```

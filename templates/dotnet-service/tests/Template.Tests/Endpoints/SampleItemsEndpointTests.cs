@@ -13,14 +13,14 @@ using Xunit;
 
 namespace Template.Tests.Endpoints;
 
-public class SampleItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class SampleItemsEndpointTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;
     private const string JwtSecret = "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!";
     private const string JwtIssuer = "https://identity.falumni.local";
     private const string JwtAudience = "falumni-services";
 
-    public SampleItemsEndpointTests(WebApplicationFactory<Program> factory)
+    public SampleItemsEndpointTests(CustomWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
 

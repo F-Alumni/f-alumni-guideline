@@ -11,16 +11,28 @@ public static class RepositoryServiceCollectionExtensions
 {
     /// <summary>
     /// Registers EF Core DbContext and repository implementations.
+    /// Supports both SQL Server and In-Memory database providers for testing.
     /// </summary>
     public static IServiceCollection AddRepositories(this IServiceCollection services, IConfiguration? configuration = null)
     {
         var connectionString = configuration?.GetConnectionString("DefaultConnection")
             ?? "Server=localhost\\SQLEXPRESS;Database=FAlumni_Template_Db;Trusted_Connection=True;TrustServerCertificate=True;";
 
-        services.AddDbContext<TemplateDbContext>(options =>
+        var dbProvider = configuration?["DatabaseProvider"] ?? "SqlServer";
+        if (dbProvider.Equals("InMemory", StringComparison.OrdinalIgnoreCase))
         {
-            options.UseSqlServer(connectionString);
-        });
+            services.AddDbContext<TemplateDbContext>(options =>
+            {
+                options.UseInMemoryDatabase("Template_TestDb");
+            });
+        }
+        else
+        {
+            services.AddDbContext<TemplateDbContext>(options =>
+            {
+                options.UseSqlServer(connectionString);
+            });
+        }
 
         services.AddScoped<ISampleItemRepository, SampleItemRepository>();
 
