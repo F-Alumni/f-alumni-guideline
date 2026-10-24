@@ -195,15 +195,28 @@ Toàn bộ quy chuẩn và đặc tả chi tiết của dự án được lưu t
    - Xử lý tắt ứng dụng an toàn (Graceful Shutdown), khử trùng lặp (Idempotent), và chính sách commit offset khi gửi mail thành công/thất bại.
    - Hướng dẫn thay thế nhà cung cấp email thực tế (SMTP/MailKit/SendGrid) và dự án mẫu tại [`examples/demo-worker/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/demo-worker/).
 
-10. 📙 [**Tài liệu 14 — Quy chuẩn Git & Quy trình Làm việc Nhóm (Team Workflow & Git Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md):
-   - Quy chuẩn đặt tên Multi-Repository (`f-alumni-*`).
-   - Phân công quyền sở hữu mã nguồn chính (Primary Owner) và người duyệt chéo (Reviewer).
-   - Chiến lược phân nhánh tinh gọn: `main`, `develop`, `feat/<ticket>-<name>`, `fix/<ticket>-<name>`.
-   - Quy trình phối hợp thay đổi Hợp đồng API (Contract Change) và Breaking Changes.
-   - Hướng dẫn chi tiết từng bước cho người mới và Mẫu Pull Request chuẩn.
+10. 🚪 [**Tài liệu 11 — Quy chuẩn Cổng API Tập trung với YARP (Central API Gateway Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/11-api-gateway.md):
+    - Điểm truy cập duy nhất (Single Entrypoint) cho Web Portal (React 18) và Mobile App (Flutter) tại cổng `5000`.
+    - Kiến trúc Reverse Proxy bằng Microsoft YARP, cấu hình chuyển tiếp `/api/v1/chats/*` và biến đổi đường dẫn `/api/chat/*`.
+    - Ranh giới bảo mật mạng nội bộ: CORS tập trung, kiểm tra JWT tập trung, rate limiting và che giấu địa chỉ topology nội bộ.
+    - Dự án mẫu độc lập tại [`examples/gateway-demo/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/gateway-demo/).
 
-11. 🤝 [**Hướng dẫn Đóng góp (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
-   - Quy tắc chung dành cho thành viên khi tham gia đóng góp mã nguồn cho các repository trong tổ chức F-Alumni.
+11. 🐳 [**Tài liệu 12 — Quy chuẩn Đóng gói Container & Docker Compose (Docker & Containerization Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/12-docker.md):
+    - Đóng gói toàn bộ hệ sinh thái mẫu thành một hệ thống chạy cục bộ qua [`docker/compose.demo.yml`](file:///c:/Use/University/PRN232/ASM/guideline/docker/compose.demo.yml).
+    - Phân biệt địa chỉ mạng nội bộ container (`chat-service:5002`, `user-grpc-server:50051`, `kafka:9092`) và địa chỉ máy chủ host (`localhost:5000`, `localhost:29092`).
+    - Bảo toàn kết nối gRPC HTTP/2 nhị phân giữa các container trong Docker bridge network.
+    - Quản lý biến môi trường an toàn qua [`docker/.env.example`](file:///c:/Use/University/PRN232/ASM/guideline/docker/.env.example) và thứ tự phụ thuộc khởi động (`depends_on`).
+    - Phân định rõ ràng: `compose.demo.yml` là bản trình diễn mẫu trong guideline; cấu hình production chính thức thuộc repo `fpt-alumni-infra`.
+
+12. 📙 [**Tài liệu 14 — Quy chuẩn Git & Quy trình Làm việc Nhóm (Team Workflow & Git Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md):
+    - Quy chuẩn đặt tên Multi-Repository (`f-alumni-*`).
+    - Phân công quyền sở hữu mã nguồn chính (Primary Owner) và người duyệt chéo (Reviewer).
+    - Chiến lược phân nhánh tinh gọn: `main`, `develop`, `feat/<ticket>-<name>`, `fix/<ticket>-<name>`.
+    - Quy trình phối hợp thay đổi Hợp đồng API (Contract Change) và Breaking Changes.
+    - Hướng dẫn chi tiết từng bước cho người mới và Mẫu Pull Request chuẩn.
+
+13. 🤝 [**Hướng dẫn Đóng góp (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
+    - Quy tắc chung dành cho thành viên khi tham gia đóng góp mã nguồn cho các repository trong tổ chức F-Alumni.
 
 ---
 
