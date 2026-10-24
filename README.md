@@ -186,14 +186,23 @@ Toàn bộ quy chuẩn và đặc tả chi tiết của dự án được lưu t
    - Xử lý lỗi chuẩn RFC 7807 (`ProblemDetails`) từ `RpcException` (NotFound 404, Unavailable 503, DeadlineExceeded 504).
    - Hướng dẫn chạy thử nghiệm dự án mẫu độc lập tại [`examples/grpc-demo/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/grpc-demo/).
 
-9. 📙 [**Tài liệu 14 — Quy chuẩn Git & Quy trình Làm việc Nhóm (Team Workflow & Git Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md):
+9. 📬 [**Tài liệu 10 — Quy chuẩn Dịch vụ Xử lý Tác vụ Nền & Gửi Email (Notification Background Worker)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/10-background-worker.md):
+   - Tách rời luồng gửi email tốn thời gian ra khỏi HTTP Request của User Service bằng `.NET BackgroundService`.
+   - Tiêu thụ sự kiện `user.registered.v1` từ Kafka mà không thay đổi schema hợp đồng.
+   - Trừu tượng hóa `IEmailSender` và `MockEmailSender` (Dev) có che giấu thông tin nhạy cảm.
+   - Cơ chế bảo mật Opaque Verification Reference & thẩm quyền duy nhất của User Service về sinh/xác thực mã OTP.
+   - Quy chuẩn ghi nhật ký an toàn (Safe Logging): Bắt buộc log `eventId`, `correlationId`, nhưng TUYỆT ĐỐI KHÔNG log mã OTP.
+   - Xử lý tắt ứng dụng an toàn (Graceful Shutdown), khử trùng lặp (Idempotent), và chính sách commit offset khi gửi mail thành công/thất bại.
+   - Hướng dẫn thay thế nhà cung cấp email thực tế (SMTP/MailKit/SendGrid) và dự án mẫu tại [`examples/demo-worker/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/demo-worker/).
+
+10. 📙 [**Tài liệu 14 — Quy chuẩn Git & Quy trình Làm việc Nhóm (Team Workflow & Git Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md):
    - Quy chuẩn đặt tên Multi-Repository (`f-alumni-*`).
    - Phân công quyền sở hữu mã nguồn chính (Primary Owner) và người duyệt chéo (Reviewer).
    - Chiến lược phân nhánh tinh gọn: `main`, `develop`, `feat/<ticket>-<name>`, `fix/<ticket>-<name>`.
    - Quy trình phối hợp thay đổi Hợp đồng API (Contract Change) và Breaking Changes.
    - Hướng dẫn chi tiết từng bước cho người mới và Mẫu Pull Request chuẩn.
 
-10. 🤝 [**Hướng dẫn Đóng góp (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
+11. 🤝 [**Hướng dẫn Đóng góp (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
    - Quy tắc chung dành cho thành viên khi tham gia đóng góp mã nguồn cho các repository trong tổ chức F-Alumni.
 
 ---
