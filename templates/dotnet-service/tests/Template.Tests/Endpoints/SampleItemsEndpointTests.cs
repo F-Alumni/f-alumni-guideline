@@ -1,6 +1,11 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Text;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.IdentityModel.Tokens;
 using Template.Services.DTOs.Common;
 using Template.Services.DTOs.Requests;
 using Template.Services.DTOs.Responses;
@@ -11,10 +16,42 @@ namespace Template.Tests.Endpoints;
 public class SampleItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
+    private const string JwtSecret = "FAlumniConnect_SuperSecretSigningKey_MustBeAtLeast32BytesLong_PRN232_ASM_2026!";
+    private const string JwtIssuer = "https://identity.falumni.local";
+    private const string JwtAudience = "falumni-services";
 
     public SampleItemsEndpointTests(WebApplicationFactory<Program> factory)
     {
         _client = factory.CreateClient();
+
+        // Configure default client with Admin token for authenticated operations
+        var adminToken = GenerateTestJwt("test-admin-id", "ADMIN");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+    }
+
+    private static string GenerateTestJwt(string userId, string role)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes(JwtSecret);
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, userId),
+            new(ClaimTypes.NameIdentifier, userId),
+            new(ClaimTypes.Role, role),
+            new("role", role)
+        };
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddHours(1),
+            Issuer = JwtIssuer,
+            Audience = JwtAudience,
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        return tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
     }
 
     [Fact]

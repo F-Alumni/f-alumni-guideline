@@ -1,3 +1,6 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Template.Api.Middlewares;
 using Template.Services.Extensions;
 
@@ -14,13 +17,47 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 
-// 3. Add Application Layer (Services & Repositories)
+// 3. Add JWT Authentication & Authorization
+var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("Jwt:Key is not configured in appsettings.json.");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "https://identity.falumni.local";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "falumni-services";
+var clockSkewMinutes = int.TryParse(builder.Configuration["Jwt:ClockSkewMinutes"], out var minutes) ? minutes : 1;
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = jwtIssuer,
+        ValidateAudience = true,
+        ValidAudience = jwtAudience,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.FromMinutes(clockSkewMinutes)
+    };
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireUserRole", policy => policy.RequireRole("USER", "ADMIN"));
+    options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("ADMIN"));
+});
+
+// 4. Add Application Layer (Services & Repositories)
 builder.Services.AddApplicationServices(builder.Configuration);
 
 var app = builder.Build();
 
-// 4. Configure HTTP Request Pipeline
-// Centralized Exception Handling Middleware
+// 5. Configure HTTP Request Pipeline
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -30,7 +67,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 
-// Health Check Endpoint (Required by Pass Criteria & Monitoring)
+// Authentication MUST be before Authorization
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Health Check Endpoint (Publicly accessible for monitoring/orchestration)
 app.MapHealthChecks("/health");
 
 // Map API Controllers
