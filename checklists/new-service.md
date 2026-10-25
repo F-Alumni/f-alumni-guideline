@@ -9,9 +9,11 @@
 ## 📋 Giai Đoạn 1: Chuẩn Bị & Phân Nhánh Git
 
 - [ ] **Xác định quyền sở hữu dịch vụ**:
-  - `BE1`: Phụ trách `f-alumni-user-service` và `f-alumni-admin-service`.
-  - `BE2`: Phụ trách `f-alumni-chat-service` và `f-alumni-ai-service`.
-  - `BE3`: Phụ trách `f-alumni-forum-service` và `f-alumni-notification-worker`.
+  - `BE1`: Phụ trách `f-alumni-user-service` và `f-alumni-chat-service`.
+  - `BE2`: Phụ trách `f-alumni-forum-service` và `f-alumni-ai-service`.
+  - `BE3`: Phụ trách `f-alumni-admin-service` và `f-alumni-infrastructure` (YARP Gateway & Notification Background Worker).
+  - `FE`: Phụ trách `f-alumni-web` (Web Portal).
+  - `Mobile`: Phụ trách `f-alumni-mobile` (Flutter App).
 - [ ] **Kiểm tra User Stories & Ranh giới**:
   - Đã đọc kỹ danh sách User Stories được giao trong [`docs/03-service-boundaries.md`](file:///c:/Use/University/PRN232/ASM/guideline/docs/03-service-boundaries.md).
 - [ ] **Tạo nhánh tính năng chuẩn**:
@@ -40,6 +42,7 @@
     ..\f-alumni-guideline\scripts\import-contracts.ps1 -SourceGuidelinePath "..\f-alumni-guideline" -TargetDirectory "." -ContractId "events/user-registered/v1"
     ```
   - [ ] File `contracts/contracts.manifest.json` và thư mục `contracts/` đã được tạo trong repository của service.
+  - [ ] **Đường dẫn trong file `.csproj`**: Tham chiếu hợp đồng bằng đường dẫn tương đối từ project (`..\..\contracts\...`), TUYỆT ĐỐI KHÔNG dùng đường dẫn tuyệt đối hoặc tham chiếu sang repository khác.
   - [ ] Chạy lệnh xác minh hợp đồng đạt chuẩn: `.\scripts\verify-contracts.ps1`.
   - [ ] Chi tiết xem tại [`docs/15-contract-sharing.md`](file:///c:/Use/University/PRN232/ASM/guideline/docs/15-contract-sharing.md).
 

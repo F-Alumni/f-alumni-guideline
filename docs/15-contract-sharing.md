@@ -17,8 +17,13 @@
    - [5.1 Quy tắc tiến hóa Sự kiện Kafka (Kafka Event Evolution)](#51-quy-tắc-tiến-hóa-sự-kiện-kafka-kafka-event-evolution)
    - [5.2 Quy tắc tiến hóa Hợp đồng gRPC Protobuf (gRPC Evolution)](#52-quy-tắc-tiến-hóa-hợp-đồng-grpc-protobuf-grpc-evolution)
 6. [Quy trình Phối hợp Nhóm Từng bước (Step-by-Step Developer Coordination)](#6-quy-trình-phối-hợp-nhóm-từng-bước-step-by-step-developer-coordination)
-7. [Ví dụ Thực tế: Đồng bộ giữa User Service & Chat Service](#7-ví-dụ-thực-tế-đồng-bộ-giữa-user-service--chat-service)
-8. [Danh mục Kiểm tra Khi Nhận & Cập nhật Hợp đồng (Checklist)](#8-danh-mục-kiểm-tra-khi-nhận--cập-nhật-hợp-đồng-checklist)
+7. [Phân Định Rõ Ràng 3 Cấp Độ Đường Dẫn (Path Scope Disambiguation)](#7-phân-định-rõ-ràng-3-cấp-độ-đường-dẫn-path-scope-disambiguation)
+8. [Ví dụ Thực Tế: Cấu Hình Hợp Đồng Cho gRPC & Kafka](#8-ví-dụ-thực-tế-cấu-hình-hợp-đồng-cho-grpc--kafka)
+   - [8.1 Cấu hình gRPC Client (Chat Service - BE1)](#81-cấu-hình-grpc-client-chat-service---be1)
+   - [8.2 Cấu hình gRPC Server (User Service - BE1)](#82-cấu-hình-grpc-server-user-service---be1)
+   - [8.3 Cấu hình Kafka Event Contract](#83-cấu-hình-kafka-event-contract-user-service-producer--notification-worker-consumer)
+   - [8.4 Xác minh tính toàn vẹn hợp đồng](#84-xác-minh-tính-toàn-vẹn-hợp-đồng)
+9. [Danh mục Kiểm tra Khi Nhận & Cập nhật Hợp đồng (Checklist)](#9-danh-mục-kiểm-tra-khi-nhận--cập-nhật-hợp-đồng-checklist)
 
 ---
 
@@ -33,10 +38,12 @@ flowchart TD
     end
 
     subgraph ServiceRepos["Các Repository Độc lập (Independent Repositories)"]
-        UserRepo["f-alumni-user-service\n(BE1: User Service + Notification Worker)"]
-        ChatRepo["f-alumni-chat-service\n(BE3: Chat Service + AI Service)"]
-        ForumRepo["f-alumni-forum-service\n(BE2: Forum Service + Admin Service)"]
-        InfraRepo["f-alumni-infrastructure\n(YARP Gateway + Docker Compose)"]
+        UserRepo["f-alumni-user-service\n(BE1: User Service - gRPC Server & Kafka Producer)"]
+        ChatRepo["f-alumni-chat-service\n(BE1: Chat Service - gRPC Client)"]
+        ForumRepo["f-alumni-forum-service\n(BE2: Forum Service - Kafka Producer)"]
+        AiRepo["f-alumni-ai-service\n(BE2: AI Service - Kafka Consumer)"]
+        AdminRepo["f-alumni-admin-service\n(BE3: Admin Service - REST Client)"]
+        InfraRepo["f-alumni-infrastructure\n(BE3: YARP Gateway + Worker + Docker)"]
         WebRepo["f-alumni-web\n(React 18 Portal)"]
         MobileRepo["f-alumni-mobile\n(Flutter Mobile App)"]
     end
@@ -44,7 +51,7 @@ flowchart TD
     GuidelineRepo -.->|import-contracts.ps1\n(grpc/user-profile/v1)| UserRepo
     GuidelineRepo -.->|import-contracts.ps1\n(grpc/user-profile/v1)| ChatRepo
     GuidelineRepo -.->|import-contracts.ps1\nevents/user-registered/v1| UserRepo
-    GuidelineRepo -.->|import-contracts.ps1\nevents/user-registered/v1| ForumRepo
+    GuidelineRepo -.->|import-contracts.ps1\nevents/user-registered/v1| InfraRepo
 ```
 
 ### 1.1 Thách thức khi dùng đường dẫn tương đối (Relative Paths)
@@ -107,23 +114,23 @@ Khi chạy công cụ `import-contracts.ps1`, file manifest chuẩn sẽ đượ
     "events/user-registered/v1": {
       "type": "KafkaEvent",
       "version": "1.0",
-      "description": "Hop dong su kien Kafka user.registered.v1 va phong bi EventEnvelope dung chung",
+      "description": "Hop dong su kien mien Kafka user.registered.v1 (User Service -> Worker / Notification)",
       "files": [
         {
-          "relativePath": "events/user-registered/v1/user.registered.v1.json",
-          "sha256": "57FA6A00F72EFBF605DFE38AC7E73E84F17E5E4E423E1B9C4A69E0DE86EF8047"
+          "relativePath": "events/EventEnvelope.cs",
+          "sha256": "D01AD55FFA76E41BEC630AA910D2366A4D5E67DCD7FEB802085CC63E3AE4D86F"
         },
         {
-          "relativePath": "events/user-registered/v1/EventEnvelope.cs",
-          "sha256": "63B34AC09FE54407B12613149CE232147CEEF5B9E56C3886A2E46A72FA044BC1"
+          "relativePath": "events/UserRegisteredEventV1.cs",
+          "sha256": "7588A40C7E2A5798425D468F4EE1E4B4B2540F4C928AFF19C764ADB71CD8E316"
         },
         {
-          "relativePath": "events/user-registered/v1/UserRegisteredEventV1.cs",
-          "sha256": "3D1B443A4E3811802DAA25E5180DF62852230FFFD92E8FD97285C50B07153676"
+          "relativePath": "events/user.registered.v1.json",
+          "sha256": "6AB8BAA92497F8B741179221B1E5C2F851175C8E70F4ED85E81E4E024CF1F1A1"
         },
         {
-          "relativePath": "events/user-registered/v1/README.md",
-          "sha256": "F51FEA733E5CD9ED6373F267A7D7B1C7E8357876AF9229D7602CD5E9028FA6CD"
+          "relativePath": "events/README.md",
+          "sha256": "C7B472E1A181108F7D2FBB00B0FB9CFF9B853E299BB86E2B7B7B54DF07F902C9"
         }
       ]
     }
@@ -300,41 +307,40 @@ sequenceDiagram
 ```
 
 ### Các bước cụ thể:
-1. **Thảo luận & Thống nhất (Alignment)**: Dev phụ trách Service Server (ví dụ BE1 - User Service) thảo luận với Dev phụ trách Service Client (ví dụ BE3 - Chat Service) về các trường dữ liệu cần bổ sung.
+1. **Thảo luận & Thống nhất (Alignment)**: Dev phụ trách Service phát hành/máy chủ (ví dụ: BE1 - User Service cho sự kiện `user.registered.v1`) thảo luận với Dev phụ trách Service tiêu thụ (ví dụ: BE3 - Notification Background Worker, hoặc BE2 - Forum Service) về các trường dữ liệu cần bổ sung.
 2. **Tạo PR tại Guideline (SSOT PR)**: Dev A tạo nhánh trên `f-alumni-guideline`, cập nhật file `.proto` hoặc schema `.json` tại thư mục `contracts/`.
 3. **Review chéo (Peer Review)**: Dev B (người tiêu thụ hợp đồng) trực tiếp review PR trên guideline để đảm bảo phía client có thể tiếp nhận dễ dàng. Sau khi duyệt, PR được merge vào nhánh `develop` của guideline.
-4. **Nhập khẩu tại Server**: Dev A chạy `.\scripts\import-contracts.ps1` vào repo Service Server, triển khai logic nghiệp vụ và commit cả hợp đồng lẫn `contracts.manifest.json`.
-5. **Nhập khẩu tại Client**: Dev B kéo code guideline mới nhất, chạy `.\scripts\import-contracts.ps1` vào repo Service Client.
+4. **Nhập khẩu tại Server / Producer**: Dev A chạy `.\scripts\import-contracts.ps1` vào repo Service Server, triển khai logic nghiệp vụ và commit cả hợp đồng lẫn `contracts.manifest.json`.
+5. **Nhập khẩu tại Client / Consumer**: Dev B kéo code guideline mới nhất, chạy `.\scripts\import-contracts.ps1` vào repo Service Client.
 6. **Xác minh & Tích hợp**: Dev B chạy `.\scripts\verify-contracts.ps1` để bảo đảm SHA-256 khớp 100%, sau đó viết code client gọi endpoint mới và kiểm thử tích hợp.
 
 ---
 
-## 7. Ví dụ Thực tế: Đồng bộ giữa User Service & Chat Service
+## 7. Phân Định Rõ Ràng 3 Cấp Độ Đường Dẫn (Path Scope Disambiguation)
 
-Dưới đây là kịch bản hướng dẫn chi tiết cách Chat Service tham chiếu hợp đồng gRPC cục bộ một cách độc lập:
+Một lỗi rất phổ biến của lập trình viên mới là nhầm lẫn giữa đường dẫn gốc repository, đường dẫn tương đối trong file `.csproj`, và đường dẫn khi gõ lệnh trong PowerShell. Bảng quy chuẩn dưới đây làm rõ 3 phạm vi đường dẫn:
 
-### Bước 1: Nhập khẩu hợp đồng vào Chat Service
-Từ thư mục gốc của repository `f-alumni-chat-service`:
-```powershell
-# Chạy script import từ thư mục chứa guideline repo
-..\f-alumni-guideline\scripts\import-contracts.ps1 `
-    -SourceGuidelinePath "..\f-alumni-guideline" `
-    -TargetDirectory "." `
-    -ContractId "grpc/user-profile/v1"
-```
+| Phạm vi đường dẫn | Điểm bắt đầu (Base Path) | Ví dụ minh họa | Ngữ cảnh sử dụng |
+| :--- | :--- | :--- | :--- |
+| **1. Repository-Root Path** | Thư mục gốc của repository (`<service-root>/`) | `contracts/grpc/user-profile/v1/user_profile.proto`<br>`contracts/events/user.registered.v1.json`<br>`contracts/contracts.manifest.json` | - Dùng trong tài liệu kỹ thuật.<br>- Dùng trong cấu hình Dockerfile.<br>- Ghi nhận trong file manifest. |
+| **2. Project-Relative Path** | Thư mục chứa file dự án C# (`<service-root>/src/<ProjectName>/`) | `..\..\contracts\grpc\user-profile\v1\user_profile.proto`<br>`..\..\contracts\events\EventEnvelope.cs` | - Khai báo trong thẻ `<Protobuf>` của `.csproj`.<br>- Khai báo trong thẻ `<Compile>` hoặc `<Content>` của `.csproj`. |
+| **3. PowerShell Execution Path** | Thư mục hiện hành của cửa sổ Terminal (Current Working Dir) | `.\scripts\verify-contracts.ps1`<br>`..\f-alumni-guideline\scripts\import-contracts.ps1` | - Gõ lệnh trong Terminal/Console từ thư mục gốc service hoặc từ thư mục guideline. |
 
-### Bước 2: Cấu hình file `.csproj` của Chat Service
-Mở file `src/FAlumni.Chat.Services/FAlumni.Chat.Services.csproj`:
+---
+
+## 8. Ví dụ Thực Tế: Cấu Hình Hợp Đồng Cho gRPC & Kafka
+
+### 8.1 Cấu hình gRPC Client (Chat Service - BE1)
+Sau khi nhập khẩu `grpc/user-profile/v1` vào `f-alumni-chat-service`, mở file `src/FAlumni.Chat.Services/FAlumni.Chat.Services.csproj`:
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <!-- Gói NuGet cần thiết để biên dịch Protobuf Client -->
+  <!-- Gói NuGet cho gRPC Client -->
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.30.0" />
     <PackageReference Include="Grpc.Net.Client" Version="2.70.0" />
@@ -344,22 +350,61 @@ Mở file `src/FAlumni.Chat.Services/FAlumni.Chat.Services.csproj`:
     </PackageReference>
   </ItemGroup>
 
-  <!-- Tham chiếu hợp đồng cục bộ từ thư mục contracts của chính service -->
+  <!-- Tham chiếu Protobuf dạng Client (Project-relative: lùi 2 cấp thư mục ra contracts/) -->
   <ItemGroup>
     <Protobuf Include="..\..\contracts\grpc\user-profile\v1\user_profile.proto" GrpcServices="Client">
       <Link>Protos\user_profile.proto</Link>
     </Protobuf>
   </ItemGroup>
-
 </Project>
 ```
 
-### Bước 3: Xác minh tính toàn vẹn hợp đồng
+### 8.2 Cấu hình gRPC Server (User Service - BE1)
+Sau khi nhập khẩu `grpc/user-profile/v1` vào `f-alumni-user-service`, mở file `src/FAlumni.User.Api/FAlumni.User.Api.csproj`:
+```xml
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!-- Gói NuGet cho gRPC Server trên Kestrel -->
+  <ItemGroup>
+    <PackageReference Include="Grpc.AspNetCore" Version="2.70.0" />
+  </ItemGroup>
+
+  <!-- Tham chiếu Protobuf dạng Server (Project-relative: lùi 2 cấp thư mục ra contracts/) -->
+  <ItemGroup>
+    <Protobuf Include="..\..\contracts\grpc\user-profile\v1\user_profile.proto" GrpcServices="Server">
+      <Link>Protos\user_profile.proto</Link>
+    </Protobuf>
+  </ItemGroup>
+</Project>
+```
+
+### 8.3 Cấu hình Kafka Event Contract (User Service Producer & Notification Worker Consumer)
+Sau khi nhập khẩu `events/user-registered/v1` vào service, các file snapshot sẽ nằm tại `<service-root>/contracts/events/`:
+- `contracts/events/EventEnvelope.cs`
+- `contracts/events/UserRegisteredEventV1.cs`
+- `contracts/events/user.registered.v1.json`
+
+Trong file `.csproj` của tầng nghiệp vụ (`src/FAlumni.User.Services/` hoặc `src/FAlumni.NotificationWorker/`):
+```xml
+  <!-- Liên kết các class Envelope và Payload từ thư mục contracts nội bộ -->
+  <ItemGroup>
+    <Compile Include="..\..\contracts\events\EventEnvelope.cs" Link="Contracts\EventEnvelope.cs" />
+    <Compile Include="..\..\contracts\events\UserRegisteredEventV1.cs" Link="Contracts\UserRegisteredEventV1.cs" />
+  </ItemGroup>
+```
+
+### 8.4 Xác minh tính toàn vẹn hợp đồng
 Trước khi commit code hoặc đẩy lên CI/CD:
 ```powershell
+# Chạy từ thư mục gốc của repository
 .\scripts\verify-contracts.ps1
 ```
-Kết quả hiển thị:
+Kết quả hiển thị mong đợi:
 ```text
 =================================================================
      FPT Alumni Connect -- Contract Integrity Verification      
@@ -367,7 +412,7 @@ Kết quả hiển thị:
 Contracts Root: C:\Projects\f-alumni-chat-service\contracts
 Manifest File : C:\Projects\f-alumni-chat-service\contracts\contracts.manifest.json
 
-Guideline Origin Commit : bd6eb11ce7547f3012d731fdd81fed6ec98d774d
+Guideline Origin Commit : bc0f53c8eb3502abaed25b4f42a188cfaabc8b17
 Imported Timestamp      : 2026-10-25T00:21:36Z
 Origin Repository       : fpt-alumni-guideline
 -----------------------------------------------------------------
@@ -390,15 +435,9 @@ Origin Repository       : fpt-alumni-guideline
 >>> KET QUA: TAT CA HOP DONG HOAN TOAN NGUYEN BAN & DAT CHUAN (PASS) <<<
 ```
 
-### Bước 4: Biên dịch và chạy thử nghiệm
-```powershell
-dotnet build
-```
-Dự án biên dịch thành công 100% với 0 lỗi, 0 cảnh báo. C# client stubs (`UserProfileService.UserProfileServiceClient`) được tự động sinh ra trong thư mục `obj/`.
-
 ---
 
-## 8. Danh mục Kiểm tra Khi Nhận & Cập nhật Hợp đồng (Checklist)
+## 9. Danh mục Kiểm tra Khi Nhận & Cập nhật Hợp đồng (Checklist)
 
 Mỗi lập trình viên cần hoàn thành danh sách kiểm tra sau trước khi mở Pull Request trên repository dịch vụ của mình:
 

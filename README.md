@@ -133,9 +133,9 @@ flowchart TD
 
 | Thành viên | Vai trò | Trách nhiệm chính trong đồ án |
 | :--- | :--- | :--- |
-| **Backend 1** | **Backend Lead** | - Cấu hình API Gateway (YARP) & Bảo mật JWT.<br>- Xây dựng **User Service** (Đăng ký, xác thực, danh bạ, gRPC Server).<br>- Xây dựng **Notification Worker** và thiết lập Docker cho cụm Kafka. |
-| **Backend 2** | **Backend Developer** | - Xây dựng **Forum Service** (Bài viết, bình luận đa tầng, thả tim, báo cáo vi phạm).<br>- Xây dựng **Admin Service** (Thống kê Dashboard, điều phối duyệt nội dung, Audit Log). |
-| **Backend 3** | **Backend Developer** | - Xây dựng **Chat Service** (Hội thoại 1-1 & nhóm, SignalR ChatHub).<br>- Tích hợp **gRPC Client** tra cứu Profile từ User Service.<br>- Xây dựng **AI Service** (Trợ lý ảo FAQ và gợi ý kết nối). |
+| **Backend 1** | **Backend Lead** | - Xây dựng **User Service** (Đăng ký, xác thực JWT, danh bạ cựu sinh viên, gRPC Profile Server).<br>- Xây dựng **Chat Service** (Hội thoại 1-1 & nhóm, SignalR ChatHub, gRPC Profile Client gọi User Service). |
+| **Backend 2** | **Backend Developer** | - Xây dựng **Forum Service** (Bài viết, bình luận đa tầng, thả tim, báo cáo vi phạm, SignalR ForumHub).<br>- Xây dựng **AI Service** (Trợ lý ảo FAQ, gợi ý kết nối cựu sinh viên, Kafka Consumer). |
+| **Backend 3** | **Backend Developer** | - Xây dựng **Admin Service** (Thống kê Dashboard, điều phối duyệt nội dung, Audit Log).<br>- Phụ trách **Hạ tầng & Gateway (Infrastructure)**: Cấu hình YARP API Gateway, Docker Compose, Notification Background Worker & Kafka Broker setup. |
 | **Frontend Web** | **Web Developer** | - Phát triển giao diện Web Portal bằng React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui.<br>- Tích hợp REST API qua Gateway, kết nối SignalR thời gian thực. |
 | **Mobile App** | **Flutter Developer** | - Phát triển ứng dụng di động đa nền tảng (Android/iOS) bằng Flutter.<br>- Tối ưu trải nghiệm lướt danh bạ, gửi tin nhắn chat và nhận thông báo đẩy. |
 
@@ -199,8 +199,13 @@ Toàn bộ quy chuẩn và tài liệu kỹ thuật được đánh số thứ t
 15. 📦 [**Tài liệu 15 — Phân phối & Quản trị Hợp đồng Giao tiếp Microservices (Contract Distribution Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/15-contract-sharing.md):
     - Giải quyết bài toán phân phối hợp đồng trong kiến trúc Multi-Repository mà không cần Private NuGet feed hay Git Submodule phức tạp.
     - Cơ chế Snapshot kèm mã băm SHA-256 (`contracts.manifest.json`) đối chiếu nguồn gốc Git commit (Provenance).
+    - Phân định rõ ràng 3 cấp độ đường dẫn: Repository-root, Project-relative (`.csproj`), và thư mục thực thi PowerShell.
     - Quy tắc tiến hóa tương thích ngược cho Kafka Events và gRPC Protobuf.
-16. 🤝 [**Hướng dẫn Đóng góp Mã Nguồn (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
+16. 🏁 [**Tài liệu 16 — Báo cáo Bàn giao & Đóng Pha Hướng dẫn Kỹ thuật (Guideline Phase Handover & Readiness)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/16-phase-guideline-handover.md):
+    - Tổng kết toàn bộ kết quả của pha Guideline, xác nhận tính sẵn sàng của hệ thống chuẩn mực và công nghệ (.NET 10, YARP, Kafka, gRPC, EF Core, Docker).
+    - Hướng dẫn tổng hợp cho các lập trình viên bắt đầu pha triển khai thực tế (Service Implementation Phase).
+    - Tiêu chuẩn Definition of Ready (DoR) cho từng repository dịch vụ độc lập.
+17. 🤝 [**Hướng dẫn Đóng góp Mã Nguồn (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
     - Quy tắc chung dành cho thành viên khi đóng góp mã nguồn cho các repository trong tổ chức F-Alumni.
 
 ---

@@ -42,9 +42,9 @@ Nhóm gồm 5 thành viên với sự phân công quyền sở hữu chính (**P
 
 | Thành viên | Vai trò | Repository sở hữu chính (Primary Owner) | Nhiệm vụ chính | Người duyệt chéo (Reviewer) |
 | :--- | :--- | :--- | :--- | :--- |
-| **Backend 1** | **Team Lead / BE Lead** | `f-alumni-infrastructure`<br>`f-alumni-user-service`<br>`f-alumni-guideline` | - Duyệt kiến trúc chung & cấu hình Gateway.<br>- Xây dựng Auth, Profile, gRPC Server, Kafka Notification Worker.<br>- Hỗ trợ giải quyết xung đột tích hợp. | **BE2, BE3** |
-| **Backend 2** | **Backend Dev** | `f-alumni-forum-service`<br>`f-alumni-admin-service` | - Xây dựng diễn đàn, bình luận, báo cáo vi phạm.<br>- Xây dựng Admin Dashboard, điều phối khóa tài khoản qua API, Audit Log. | **BE1, Web** |
-| **Backend 3** | **Backend Dev** | `f-alumni-chat-service`<br>`f-alumni-ai-service` | - Xây dựng tin nhắn thời gian thực qua SignalR ChatHub.<br>- Tích hợp gRPC Client gọi sang User Service.<br>- Xây dựng AI Service (FAQ Chatbot, gợi ý cựu sinh viên). | **BE1, Mobile** |
+| **Backend 1** | **Team Lead / BE Lead** | `f-alumni-user-service`<br>`f-alumni-chat-service`<br>`f-alumni-guideline` | - Duyệt kiến trúc chung & chuẩn hóa hợp đồng.<br>- Xây dựng **User Service** (Auth, Profile, gRPC Server).<br>- Xây dựng **Chat Service** (SignalR ChatHub, gRPC Client). | **BE2, BE3** |
+| **Backend 2** | **Backend Dev** | `f-alumni-forum-service`<br>`f-alumni-ai-service` | - Xây dựng **Forum Service** (Bài viết, bình luận, tương tác, SignalR ForumHub).<br>- Xây dựng **AI Service** (Trợ lý ảo FAQ, gợi ý kết nối, Kafka Consumer). | **BE1, Web** |
+| **Backend 3** | **Backend Dev** | `f-alumni-admin-service`<br>`f-alumni-infrastructure` | - Xây dựng **Admin Service** (Dashboard, điều phối khóa tài khoản, Audit Log).<br>- Phụ trách **Hạ tầng & Gateway**: YARP API Gateway, Docker Compose, Notification Background Worker & Kafka Broker. | **BE1, Mobile** |
 | **Web Dev** | **Frontend Dev** | `f-alumni-web` | - Xây dựng toàn bộ giao diện Web Portal (React + Vite + Tailwind + shadcn/ui).<br>- Tích hợp REST API từ Gateway và SignalR Chat/Forum. | **BE1, BE2** |
 | **Mobile Dev** | **Flutter Dev** | `f-alumni-mobile` | - Xây dựng ứng dụng di động Flutter.<br>- Tối ưu trải nghiệm lướt danh bạ, chat thời gian thực qua SignalR, thông báo. | **BE1, BE3** |
 

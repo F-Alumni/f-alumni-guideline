@@ -175,7 +175,8 @@ $RequiredDocs = @(
     "12-docker.md",
     "13-testing.md",
     "14-team-workflow.md",
-    "15-contract-sharing.md"
+    "15-contract-sharing.md",
+    "16-phase-guideline-handover.md"
 )
 
 foreach ($DocName in $RequiredDocs) {

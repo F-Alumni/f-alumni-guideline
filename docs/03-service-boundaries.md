@@ -228,9 +228,9 @@ Dự án gồm **3 lập trình viên Backend, 1 lập trình viên Web, 1 lập
 ```mermaid
 flowchart LR
     subgraph Team["Đội ngũ Phát triển FPT Alumni Connect (5 Thành viên)"]
-        BE1["Backend Dev 1 (Team Lead)\n- Kiến trúc Gateway & User Service\n- Notification Background Worker\n- Kafka Setup & Auth JWT"]
-        BE2["Backend Dev 2\n- Forum Service (Posts, Comments, Reactions)\n- Admin Service (Dashboard, Audit Log, Moderation)"]
-        BE3["Backend Dev 3\n- Chat Service (SignalR Real-time, Conversations)\n- gRPC Server-Client Communication\n- AI Service (Q&A FAQ Chatbot)"]
+        BE1["Backend Dev 1 (Team Lead)\n- User Service (Auth JWT, Profiles, gRPC Server)\n- Chat Service (1-1/Group, SignalR, gRPC Client)"]
+        BE2["Backend Dev 2\n- Forum Service (Posts, Comments, Reactions, Hub)\n- AI Service (FAQ Chatbot, Mentorship Suggestions)"]
+        BE3["Backend Dev 3\n- Admin Service (Dashboard, Moderation, Audit Log)\n- Infrastructure (YARP Gateway, Docker, Worker)"]
         WEB["Frontend Web Dev\n- Web Portal (React 18 + Vite + TS + Tailwind)\n- Giao diện Người dùng & Admin Portal"]
         MOB["Mobile App Dev\n- Mobile App (Flutter Cross-Platform)\n- Tối ưu trải nghiệm Chat, Directory & Thông báo"]
     end
@@ -238,16 +238,14 @@ flowchart LR
 
 ### Chi tiết phân công:
 1. **Backend Developer 1 (Lead)**:
-   - Chịu trách nhiệm cấu hình **API Gateway** (YARP), bảo mật JWT chung toàn hệ thống.
-   - Phát triển **User Service** (Đăng ký, xác thực, thông tin cá nhân, danh bạ cựu sinh viên).
-   - Phát triển **Notification Background Worker** (.NET Worker Service) và cấu hình Docker cụm Kafka Broker.
+   - Phát triển **User Service** (Đăng ký, xác thực JWT, thông tin cá nhân, danh bạ cựu sinh viên, máy chủ gRPC Server cung cấp hồ sơ).
+   - Phát triển **Chat Service** (Triển khai SignalR ChatHub, quản lý phiên chat 1-1 và nhóm, máy khách gRPC Client tra cứu Profile từ User Service).
 2. **Backend Developer 2**:
-   - Phát triển **Forum Service** (CRUD bài viết, bình luận phân cấp, thả biểu cảm, tiếp nhận báo cáo).
-   - Phát triển **Admin Service** (Bảng tin quản trị, xử lý báo cáo, điều phối API khóa tài khoản người dùng, ghi Audit Log).
+   - Phát triển **Forum Service** (CRUD bài viết, bình luận phân cấp, thả biểu cảm, tiếp nhận báo cáo, SignalR ForumHub).
+   - Phát triển **AI Service** (Xây dựng API Q&A Chatbot hỗ trợ cựu sinh viên, gợi ý kết nối mạng lưới, Kafka Consumer).
 3. **Backend Developer 3**:
-   - Phát triển **Chat Service** (Triển khai SignalR ChatHub, quản lý phiên chat 1-1 và nhóm).
-   - Thiết lập cấu hình **gRPC Client** gọi sang User Service để tra cứu Profile tức thì.
-   - Phát triển **AI Service** (Xây dựng API Q&A Chatbot hỗ trợ cựu sinh viên).
+   - Phát triển **Admin Service** (Bảng tin quản trị Dashboard, xử lý báo cáo, điều phối API khóa tài khoản người dùng, ghi Audit Log).
+   - Phụ trách **Hạ tầng & Gateway (Infrastructure)**: Cấu hình API Gateway (Microsoft YARP), Notification Background Worker (.NET Worker Service), cấu hình Docker Compose cho toàn bộ cụm dịch vụ và Kafka Broker.
 4. **Web Developer**:
    - Xây dựng Web Portal bằng React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui.
    - Tích hợp REST API qua Gateway, kết nối WebSocket SignalR cho Chat & Forum.

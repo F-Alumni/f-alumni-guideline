@@ -2,7 +2,12 @@
 
 > **Mã tài liệu**: `CHECKLIST-02-INTEGRATION`  
 > **Dự án**: FPT Alumni Connect (PRN232 Final Assignment)  
-> **Mục đích**: Đảm bảo việc kết nối giữa 5 microservices, API Gateway, Apache Kafka và Background Worker diễn ra trơn tru, không xung đột hợp đồng trước khi hợp nhất vào nhánh `develop`.
+> **Mục đích**: Đảm bảo việc kết nối giữa 5 microservices, API Gateway, Apache Kafka và Background Worker diễn ra trơn tru, không xung đột hợp đồng trước khi hợp nhất vào nhánh `develop`.  
+> **Phân công trách nhiệm tích hợp**:  
+> - **BE1**: User Service (gRPC Server, Auth JWT, Kafka Producer) & Chat Service (gRPC Client, SignalR Hub).  
+> - **BE2**: Forum Service (SignalR Hub, Kafka Producer) & AI Service (Kafka Consumer, FAQ API).  
+> - **BE3**: Admin Service (Dashboard API, Audit Log) & Hạ tầng (YARP Gateway, Docker Compose, Notification Background Worker).  
+> - **FE & Mobile**: Tích hợp REST qua API Gateway (`http://localhost:5000`) và WebSockets SignalR.
 
 ---
 

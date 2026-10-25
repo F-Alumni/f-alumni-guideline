@@ -25,12 +25,12 @@ Nhóm làm việc theo mô hình Multi-Repo, bao gồm 9 repository chính thứ
 | Tên Repository | Công nghệ | Chủ sở hữu chính (Primary Owner) | Người duyệt chéo (Reviewer) |
 | :--- | :--- | :--- | :--- |
 | **`f-alumni-guideline`** | Markdown / Docs | **BE1 (Lead)** | Toàn bộ thành viên |
-| **`f-alumni-infrastructure`** | Docker / YARP Gateway | **BE1 (Lead)** | BE2, BE3 |
+| **`f-alumni-infrastructure`** | Docker / YARP Gateway | **BE3** | BE1, BE2 |
 | **`f-alumni-user-service`** | .NET 10 Web API | **BE1 (Lead)** | BE2, BE3 |
-| **`f-alumni-chat-service`** | .NET 10 Web API | **BE3** | BE1, Mobile |
+| **`f-alumni-chat-service`** | .NET 10 Web API | **BE1 (Lead)** | BE3, Mobile |
 | **`f-alumni-forum-service`** | .NET 10 Web API | **BE2** | BE1, Web |
-| **`f-alumni-ai-service`** | .NET 10 Web API | **BE3** | BE1, Mobile |
-| **`f-alumni-admin-service`** | .NET 10 Web API | **BE2** | BE1, Web |
+| **`f-alumni-ai-service`** | .NET 10 Web API | **BE2** | BE1, Mobile |
+| **`f-alumni-admin-service`** | .NET 10 Web API | **BE3** | BE1, Web |
 | **`f-alumni-web`** | React 18, Vite, TS | **Web Dev** | BE1, BE2 |
 | **`f-alumni-mobile`** | Flutter, Dart | **Mobile Dev** | BE1, BE3 |
 

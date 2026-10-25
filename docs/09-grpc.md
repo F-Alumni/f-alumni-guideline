@@ -227,10 +227,10 @@ Invoke-RestMethod -Uri "http://localhost:50052/api/v1/chats/conversations/999999
 
 ## 📦 7. Phân phối & Quản trị Hợp đồng gRPC trong Multi-Repo (Contract Distribution)
 
-Trong mô hình multi-repo, Chat Service tuyệt đối **không** dùng relative path trỏ sang repository khác (`..\..\..\..\contracts\`). Thay vào đó, hợp đồng Protobuf được phân phối bằng script tự động vào cây thư mục của service:
+Trong mô hình multi-repo, Chat Service và User Service tuyệt đối **không** dùng relative path trỏ sang repository khác (`..\..\..\..\contracts\`). Thay vào đó, hợp đồng Protobuf được phân phối bằng script tự động vào cây thư mục của service:
 
 ```powershell
-# Nhập khẩu hợp đồng gRPC user-profile v1 vào Chat Service
+# Chạy từ thư mục gốc của repository dịch vụ (PowerShell execution path):
 ..\f-alumni-guideline\scripts\import-contracts.ps1 `
     -SourceGuidelinePath "..\f-alumni-guideline" `
     -TargetDirectory "." `
@@ -240,17 +240,42 @@ Trong mô hình multi-repo, Chat Service tuyệt đối **không** dùng relativ
 .\scripts\verify-contracts.ps1
 ```
 
-Trong file `.csproj` của Chat Service, cấu hình gRPC Client độc lập với các gói `Google.Protobuf`, `Grpc.Net.Client`, `Grpc.Tools`:
-```xml
-<ItemGroup>
-  <Protobuf Include="..\..\contracts\grpc\user-profile\v1\user_profile.proto" GrpcServices="Client">
-    <Link>Protos\user_profile.proto</Link>
-  </Protobuf>
-</ItemGroup>
-```
+### Phân định 3 cấp độ đường dẫn:
+1. **Repository-Root Path**: `<service-root>/contracts/grpc/user-profile/v1/user_profile.proto`.
+2. **Project-Relative Path (.csproj)**: Lùi 2 cấp thư mục từ `src/<ProjectName>/` ra thư mục `contracts/`:
+   - **Máy khách gRPC Client (Chat Service - BE1)** trong `src/FAlumni.Chat.Services/FAlumni.Chat.Services.csproj`:
+     ```xml
+     <ItemGroup>
+       <PackageReference Include="Google.Protobuf" Version="3.30.0" />
+       <PackageReference Include="Grpc.Net.Client" Version="2.70.0" />
+       <PackageReference Include="Grpc.Tools" Version="2.70.0">
+         <PrivateAssets>all</PrivateAssets>
+         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+       </PackageReference>
+     </ItemGroup>
+
+     <ItemGroup>
+       <Protobuf Include="..\..\contracts\grpc\user-profile\v1\user_profile.proto" GrpcServices="Client">
+         <Link>Protos\user_profile.proto</Link>
+       </Protobuf>
+     </ItemGroup>
+     ```
+   - **Máy chủ gRPC Server (User Service - BE1)** trong `src/FAlumni.User.Api/FAlumni.User.Api.csproj`:
+     ```xml
+     <ItemGroup>
+       <PackageReference Include="Grpc.AspNetCore" Version="2.70.0" />
+     </ItemGroup>
+
+     <ItemGroup>
+       <Protobuf Include="..\..\contracts\grpc\user-profile\v1\user_profile.proto" GrpcServices="Server">
+         <Link>Protos\user_profile.proto</Link>
+       </Protobuf>
+     </ItemGroup>
+     ```
+3. **PowerShell Execution Path**: Lệnh PowerShell thực thi từ thư mục gốc của repository (`.\scripts\verify-contracts.ps1`).
 
 > [!TIP]
-> Xem chi tiết hướng dẫn quản lý bản kê `contracts.manifest.json`, quy tắc bất biến số thứ tự tag (Field Tag Immutability) và quy trình điều phối giữa BE1 và BE3 tại [Tài liệu 15 — Phân phối & Quản trị Hợp đồng Giao tiếp Microservices](file:///c:/Use/University/PRN232/ASM/guideline/docs/15-contract-sharing.md).
+> Xem chi tiết hướng dẫn quản lý bản kê `contracts.manifest.json`, quy tắc bất biến số thứ tự tag (Field Tag Immutability) và phân định đường dẫn tại [Tài liệu 15 — Phân phối & Quản trị Hợp đồng Giao tiếp Microservices](file:///c:/Use/University/PRN232/ASM/guideline/docs/15-contract-sharing.md).
 
 ---
 
