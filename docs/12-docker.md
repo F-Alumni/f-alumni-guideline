@@ -134,7 +134,54 @@ Khi hệ thống đang chạy, bạn có thể gọi từ máy host vào cổng 
 curl http://localhost:5000/api/chat/conversations/11111111-1111-1111-1111-111111111111/participants/11111111-1111-1111-1111-111111111111
 ```
 
-### 6.5. Dừng và dọn dẹp tài nguyên
+### 6.5. Chạy Kịch Bản Kiểm Thử Khói Tự Động (Automated Smoke Test)
+Dự án cung cấp sẵn kịch bản PowerShell kiểm tra toàn bộ 2 luồng tích hợp phân tán (Workflow A & Workflow B):
 ```powershell
+# Kiem tra truc tiep tren he thong Docker live dang chay:
+.\scripts\smoke-test.ps1 -Live
+
+# Kiem tra gia lap in-process (khi khong bat Docker):
+.\scripts\smoke-test.ps1 -InProcess
+```
+
+### 6.6. Dừng và dọn dẹp tài nguyên an toàn (Graceful Shutdown)
+```powershell
+# Dung cac container ma khong lam mat du lieu database:
 docker compose -f docker/compose.demo.yml down
 ```
+
+> [!CAUTION]
+> Tuyệt đối **KHÔNG** sử dụng cờ `-v` (`docker compose down -v`) vì lệnh này sẽ xóa sạch toàn bộ các Docker Volumes lưu trữ cơ sở dữ liệu!
+
+---
+
+## 🛠️ 7. Hướng Dẫn Khắc Phục Sự Cố Phổ Biến (Troubleshooting Guide)
+
+### 7.1. Lỗi Kết nối Kafka từ Máy Host (`Failed to resolve 'kafka:9092'`)
+- **Triệu chứng**: Chạy producer hoặc consumer trên máy host (Windows) báo lỗi không phân giải được tên miền `kafka`.
+- **Nguyên nhân**: Tên miền `kafka:9092` chỉ tồn tại bên trong mạng nội bộ Docker bridge `f-alumni-demo-net`.
+- **Cách khắc phục**:
+  - Các ứng dụng chạy trong container (như `notification-worker`): Kết nối tới `kafka:9092`.
+  - Các ứng dụng chạy trực tiếp trên máy host (như `KafkaProducer`): Kết nối tới cổng đã ánh xạ **`localhost:29092`**.
+
+### 7.2. Lỗi Giao Thức gRPC HTTP/2 (`Protocol error` / `Bad Request`)
+- **Triệu chứng**: Chat Service gọi User Service gRPC báo lỗi kết nối hoặc HTTP 400.
+- **Nguyên nhân**: gRPC yêu cầu HTTP/2. Khi chạy HTTP không mã hóa (H2C) trong mạng nội bộ, Kestrel mặc định có thể hạ cấp xuống HTTP/1.1.
+- **Cách khắc phục**: Trong tệp compose của `user-grpc-server`, bắt buộc đặt biến môi trường:
+  ```yaml
+  Kestrel__Endpoints__gRpc__Url: "http://+:50051"
+  Kestrel__Endpoints__gRpc__Protocols: "Http2"
+  ```
+
+### 7.3. Lỗi Gateway Trả về `502 Bad Gateway` hoặc `504 Gateway Timeout`
+- **Triệu chứng**: Gửi request tới cổng `5000` nhận phản hồi `502 Bad Gateway` hoặc `504 Gateway Timeout`.
+- **Nguyên nhân**: Upstream service (`chat-service` hoặc `user-grpc-server`) chưa khởi động xong, đã bị dừng, hoặc phản hồi quá thời gian quy định (deadline 3s).
+- **Cách khắc phục**:
+  1. Kiểm tra trạng thái container: `docker compose -f docker/compose.demo.yml ps`.
+  2. Xem nhật ký container nghi ngờ: `docker compose -f docker/compose.demo.yml logs chat-service`.
+
+### 7.4. Xung Đột Cổng SQL Server (Port 1433 Conflict)
+- **Triệu chứng**: Container SQL Server không khởi động được do cổng 1433 đã bị chiếm dụng.
+- **Nguyên nhân**: Máy host đã cài sẵn SQL Server Express đang chiếm dụng cổng 1433.
+- **Cách khắc phục**: Tệp `docker/compose.demo.yml` và `.env.example` đã chuẩn hóa cổng host sang **`14333`** (`- "14333:1433"`). Không bao giờ map đè lên cổng 1433 của máy host.
+

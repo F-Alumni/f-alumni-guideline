@@ -123,11 +123,18 @@ Chạy kiểm tra toàn bộ 5 solution, kiểm tra cấu hình tĩnh và chạy
 Chạy kiểm tra luồng tích hợp xuyên suốt giữa các microservices:
 
 ```powershell
+# 1. Kiem tra truc tiep tren he thong Docker Compose dang chay:
+.\scripts\smoke-test.ps1 -Live
+
+# 2. Kiem tra gia lap in-process bang bo test suite WebApplicationFactory:
+.\scripts\smoke-test.ps1 -InProcess
+
+# 3. Tu dong nhan dien moi truong (Auto-detection):
 .\scripts\smoke-test.ps1
 ```
 
-- **Khi Docker đang chạy**: Tự động gửi request HTTP thật qua Gateway tại cổng `5000`, xác thực chuỗi `Gateway -> Chat REST -> User gRPC` và kiểm tra log Worker.
-- **Khi Docker chưa bật**: Tự động chuyển sang chế độ In-Process Integration Test để kiểm tra toàn bộ luồng tương đương mà không làm gián đoạn công việc của lập trình viên.
+- **Khi chọn cờ `-Live`**: Bắt buộc kiểm tra trực tiếp trên container Docker. Nếu Docker Desktop chưa bật hoặc container chưa sẵn sàng, kịch bản báo `[NOT VERIFIED]` và trả về mã lỗi kết thúc khác 0. **Tuyệt đối không tự động fallback sang In-Process để tránh ngụy tạo kết quả kiểm thử thực tế.**
+- **Khi chọn cờ `-InProcess`**: Chạy 16 ca kiểm thử tích hợp nội tại (`GatewayDemo.Tests` và `DemoWorker.Tests`) độc lập hoàn toàn với Docker.
 
 ---
 
@@ -137,13 +144,17 @@ Khi trình bày với Hội đồng Giảng viên, các nhóm sinh viên hãy th
 
 1. **Bước 1 — Chứng minh Kiểm thử Đơn vị & Tự động hóa**:
    - Mở terminal và chạy lệnh `.\scripts\verify-all.ps1`.
-   - Giới thiệu với giảng viên: Hệ thống có 54 bài kiểm thử tự động bao phủ toàn bộ 5 khía cạnh kiến trúc (REST, EF Core, JWT, gRPC, Kafka, Gateway).
+   - Giới thiệu với giảng viên: Hệ thống có 70 bài kiểm thử tự động (và 7 bài kiểm thử SQL Server thực tế) bao phủ toàn bộ các khía cạnh kiến trúc (REST, EF Core, JWT, gRPC, Kafka, Gateway).
 2. **Bước 2 — Trình diễn Luồng Đồng bộ (REST + gRPC)**:
-   - Gửi request tới Gateway: `GET http://localhost:5000/api/chat/rooms/room-101/messages`.
-   - Chỉ ra rằng: Gateway đã rewrite đường dẫn, Chat Service đã nhận request và gọi sang User gRPC Server qua HTTP/2 nhị phân để lấy Avatar và Tên của cựu sinh viên.
+   - Gửi request tới Gateway: `GET http://localhost:5000/api/chat/conversations/11111111-1111-1111-1111-111111111111/participants/11111111-1111-1111-1111-111111111111`.
+   - Chỉ ra rằng: Gateway đã rewrite đường dẫn từ `/api/chat/...` sang `/api/v1/chats/...`, Chat Service đã nhận request và gọi sang User gRPC Server qua HTTP/2 nhị phân để lấy Avatar và Tên của cựu sinh viên.
 3. **Bước 3 — Trình diễn Luồng Bất đồng bộ (Kafka + Background Worker)**:
-   - Chạy Producer gửi sự kiện `user.registered.v1`.
-   - Mở nhật ký của Notification Worker để thấy thông báo giả lập gửi email chào mừng với mã xác minh đã được bảo mật.
+   - Chạy Producer gửi sự kiện `user.registered.v1`:
+     ```powershell
+     dotnet run --project examples/kafka-demo/src/KafkaProducer/KafkaProducer.csproj -- localhost:29092
+     ```
+   - Mở nhật ký của Notification Worker (`docker compose -f docker/compose.demo.yml logs -f notification-worker`) để thấy thông báo giả lập gửi email chào mừng với mã xác minh đã được bảo mật.
 4. **Bước 4 — Trình diễn Tính Chịu Lỗi (Fault Tolerance)**:
-   - Tắt container `user-grpc-server`.
-   - Gửi lại request chat: Hệ thống không bị crash mà Chat Service kích hoạt cơ chế fallback hiển thị người dùng ẩn danh.
+   - Tạm dừng container `user-grpc-server` (`docker compose -f docker/compose.demo.yml pause user-grpc-server`).
+   - Gửi lại request chat: Hệ thống không bị crash mà Chat Service xử lý ngoại lệ an toàn trả về ProblemDetails (HTTP 504/503).
+   - Bật lại: `docker compose -f docker/compose.demo.yml unpause user-grpc-server`.

@@ -19,7 +19,7 @@ Bảng dưới đây quy chiếu trực tiếp các yêu cầu học phần PRN2
 | **4. gRPC Inter-Service** | Giao tiếp đồng bộ HTTP/2 nhị phân giữa Chat Service và User Service để tra cứu hồ sơ người dùng (Tên & Avatar). | [`examples/grpc-demo/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/grpc-demo/)<br>[`docs/09-grpc.md`](file:///c:/Use/University/PRN232/ASM/guideline/docs/09-grpc.md) | Chat Service gọi endpoint lấy danh sách tin nhắn, tự động gọi qua gRPC lấy thông tin hiển thị của sender; chứng minh fallback khi User Service offline. |
 | **5. Asynchronous Events (Kafka)** | Sự kiện `user.registered.v1` được phát lên Kafka Topic khi đăng ký tài khoản mới; partition key = `userId`. | [`examples/kafka-demo/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/kafka-demo/)<br>[`docs/08-kafka.md`](file:///c:/Use/University/PRN232/ASM/guideline/docs/08-kafka.md) | Chạy Producer gửi event, hiển thị payload JSON Envelope với đầy đủ `correlationId` và `eventId`. |
 | **6. Background Worker / Job** | .NET BackgroundService tiêu thụ sự kiện từ Kafka, xử lý gửi email chào mừng giả lập, khử trùng lặp (Idempotent). | [`examples/demo-worker/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/demo-worker/)<br>[`docs/10-background-worker.md`](file:///c:/Use/University/PRN232/ASM/guideline/docs/10-background-worker.md) | Xem nhật ký console của Worker khi nhận message, chứng minh mã xác minh được che giấu (`[REDACTED]`) và sự kiện gửi lặp bị bỏ qua. |
-| **7. API Gateway (YARP)** | Microsoft YARP Reverse Proxy làm cổng duy nhất cho Web và Mobile tại cổng `5000`, biến đổi đường dẫn URL. | [`examples/gateway-demo/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/gateway-demo/)<br>[`docs/11-api-gateway.md`](file:///c:/Use/University/PRN232/ASM/guideline/docs/11-api-gateway.md) | Gọi `http://localhost:5000/api/chat/rooms/room-101/messages`, chứng minh Gateway tự rewrite sang `/api/v1/chats/...` và che giấu port nội bộ `5002`. |
+| **7. API Gateway (YARP)** | Microsoft YARP Reverse Proxy làm cổng duy nhất cho Web và Mobile tại cổng `5000`, biến đổi đường dẫn URL. | [`examples/gateway-demo/`](file:///c:/Use/University/PRN232/ASM/guideline/examples/gateway-demo/)<br>[`docs/11-api-gateway.md`](file:///c:/Use/University/PRN232/ASM/guideline/docs/11-api-gateway.md) | Gọi `http://localhost:5000/api/chat/conversations/11111111-1111-1111-1111-111111111111/participants/11111111-1111-1111-1111-111111111111`, chứng minh Gateway tự rewrite sang `/api/v1/chats/...` và che giấu port nội bộ `5002`. |
 | **8. Containerization (Docker)** | Toàn bộ hệ thống chạy qua Docker Compose trên bridge network `f-alumni-demo-net`. | [`docker/compose.demo.yml`](file:///c:/Use/University/PRN232/ASM/guideline/docker/compose.demo.yml)<br>[`docs/12-docker.md`](file:///c:/Use/University/PRN232/ASM/guideline/docs/12-docker.md) | Chạy `docker compose ps` cho thấy toàn bộ 6 container ở trạng thái `healthy` hoặc `Up`. |
 
 ---
@@ -54,29 +54,35 @@ Thời lượng trình diễn khuyến nghị: **10 - 15 phút**.
    ```
 2. Thực hiện gọi API Chat qua Gateway:
    ```powershell
-   curl http://localhost:5000/api/chat/rooms/room-101/messages
+   curl http://localhost:5000/api/chat/conversations/11111111-1111-1111-1111-111111111111/participants/11111111-1111-1111-1111-111111111111
    ```
 3. **Phân tích kết quả hiển thị cho Giảng viên**:
-   - URL gửi tới là `/api/chat/rooms/room-101/messages` (cổng `5000`).
-   - Gateway YARP tự động biến đổi thành `/api/v1/chats/rooms/room-101/messages` và định tuyến ngầm tới `chat-service:5002`.
-   - Trong dữ liệu tin nhắn trả về, thông tin người gửi:
+   - URL gửi tới là `/api/chat/conversations/.../participants/...` (cổng `5000`).
+   - Gateway YARP tự động biến đổi thành `/api/v1/chats/conversations/.../participants/...` và định tuyến ngầm tới `chat-service:5002`.
+   - Trong dữ liệu trả về, thông tin người dùng:
      ```json
-     "senderDisplayName": "Nguyen Van A",
-     "senderAvatarUrl": "https://cdn.falumni.edu.vn/avatars/user-001.png"
+     {
+       "conversationId": "11111111-1111-1111-1111-111111111111",
+       "userId": "11111111-1111-1111-1111-111111111111",
+       "displayName": "Nguyen Van A",
+       "avatarUrl": "https://cdn.falumni.local/avatars/nguyenvana.jpg",
+       "status": "Alumni",
+       "resolvedVia": "gRPC (HTTP/2 Protobuf)"
+     }
      ```
      được Chat Service tra cứu trực tiếp qua **gRPC HTTP/2 nhị phân** từ User Service (`user-grpc-server:50051`) trong thời gian dưới 10ms.
-4. **Trình diễn Khả năng Chịu lỗi (Fault Tolerance)**:
+4. **Trình diễn Khả năng Chịu lỗi & Hợp đồng Lỗi**:
+   - Gọi ID người dùng không tồn tại (`99999999-9999-9999-9999-999999999999`):
+     ```powershell
+     curl -i http://localhost:5000/api/chat/conversations/11111111-1111-1111-1111-111111111111/participants/99999999-9999-9999-9999-999999999999
+     # Kết quả: HTTP/1.1 404 Not Found theo chuẩn RFC 7807 ProblemDetails
+     ```
    - Tạm dừng container User gRPC Server:
      ```powershell
-     docker stop user-grpc-server
+     docker compose -f docker/compose.demo.yml pause user-grpc-server
      ```
-   - Gọi lại lệnh `curl http://localhost:5000/api/chat/rooms/room-101/messages`.
-   - Kết quả: Chat Service không bị crash mà tự động kích hoạt Fallback:
-     ```json
-     "senderDisplayName": "Anonymous User",
-     "senderAvatarUrl": "https://cdn.falumni.edu.vn/avatars/default.png"
-     ```
-   - Bật lại container: `docker start user-grpc-server`.
+   - Gọi lại endpoint: Chat Service không bị sập mà trả về HTTP 504 Gateway Timeout / 503 Service Unavailable an toàn.
+   - Bật lại container: `docker compose -f docker/compose.demo.yml unpause user-grpc-server`.
 
 ---
 
@@ -88,23 +94,28 @@ Thời lượng trình diễn khuyến nghị: **10 - 15 phút**.
    ```
 2. Mở cửa sổ terminal thứ hai và kích hoạt Kafka Producer để phát sự kiện đăng ký người dùng mới:
    ```powershell
-   # Chạy producer gửi sự kiện mẫu:
-   dotnet run --project examples/kafka-demo/src/KafkaProducer/KafkaProducer.csproj
+   # Chạy producer gửi sự kiện mẫu tới Kafka broker (host port 29092):
+   dotnet run --project examples/kafka-demo/src/KafkaProducer/KafkaProducer.csproj -- localhost:29092
    ```
 3. **Quan sát tại cửa sổ Worker**:
    - Worker ngay lập tức nhận được sự kiện `user.registered.v1`.
    - Dòng log xuất hiện:
      ```text
-     [INFO] NotificationWorker consumed event: user.registered.v1, EventId: evt-1001, UserId: usr-12345
-     [EMAIL MOCK] Sending Welcome Email to: nguyenvana@fpt.edu.vn | Subject: Chào mừng bạn đến với FPT Alumni Connect!
-     [EMAIL MOCK] Verification Link Reference: [REDACTED_OPAQUE_TOKEN]
-     [INFO] Offset successfully committed for partition 0.
+     info: NotificationWorker.Workers.NotificationBackgroundService[0]
+           Received Kafka message from Partition 0 at Offset 0
+     info: NotificationWorker.Services.NotificationEventProcessor[0]
+           Consuming event: EventId=..., CorrelationId=..., EventType=user.registered.v1, Producer=f-alumni-user-service
+     info: NotificationWorker.Services.MockEmailSender[0]
+           [MOCK EMAIL DELIVERED] Recipient: st***@fpt.edu.vn | Subject: Chào mừng bạn đến với FPT Alumni Connect — Mã xác thực tài khoản | Provider: DevMock
+     info: NotificationWorker.Services.NotificationEventProcessor[0]
+           Email dispatched successfully: EventId=..., CorrelationId=...
      ```
 4. **Chứng minh Khử Trùng Lặp (Idempotent Handling)**:
    - Gửi lại cùng sự kiện (cùng `eventId`):
    - Worker nhận diện `eventId` đã tồn tại trong bộ nhớ đệm, ghi log:
      ```text
-     [WARN] Duplicate event received (eventId: evt-1001). Skipping email delivery to prevent duplicate notifications.
+     warn: NotificationWorker.Services.NotificationEventProcessor[0]
+           Duplicate event skipped: EventId=..., CorrelationId=... was already processed (Idempotent).
      ```
    - Không có email thứ hai nào được gửi đi!
 
