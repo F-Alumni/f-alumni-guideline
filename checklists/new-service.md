@@ -30,6 +30,18 @@
   - [ ] Solution có đầy đủ 4 dự án: `.Api`, `.Services`, `.Repositories`, `.Tests`.
   - [ ] Lệnh `dotnet build` và `dotnet test` chạy thành công 100% không có lỗi.
   - [ ] Tên namespace đã được đổi đồng bộ từ `Template` sang `<ServiceName>`.
+- [ ] **Nhập khẩu hợp đồng giao tiếp cần thiết (Contract Distribution)**:
+  - Nếu service cần gọi gRPC sang User Service (ví dụ Chat Service):
+    ```powershell
+    ..\f-alumni-guideline\scripts\import-contracts.ps1 -SourceGuidelinePath "..\f-alumni-guideline" -TargetDirectory "." -ContractId "grpc/user-profile/v1"
+    ```
+  - Nếu service cần phát sinh hoặc tiêu thụ Kafka Events (ví dụ Notification Worker, User, Forum):
+    ```powershell
+    ..\f-alumni-guideline\scripts\import-contracts.ps1 -SourceGuidelinePath "..\f-alumni-guideline" -TargetDirectory "." -ContractId "events/user-registered/v1"
+    ```
+  - [ ] File `contracts/contracts.manifest.json` và thư mục `contracts/` đã được tạo trong repository của service.
+  - [ ] Chạy lệnh xác minh hợp đồng đạt chuẩn: `.\scripts\verify-contracts.ps1`.
+  - [ ] Chi tiết xem tại [`docs/15-contract-sharing.md`](file:///c:/Use/University/PRN232/ASM/guideline/docs/15-contract-sharing.md).
 
 ---
 
@@ -105,6 +117,7 @@
 
 ## 📦 Giai Đoạn 7: Mở Pull Request & Bàn Giao
 
+- [ ] Chạy kiểm tra tính toàn vẹn hợp đồng cục bộ: `.\scripts\verify-contracts.ps1` (đạt 100% `[PASS]`).
 - [ ] Chạy kịch bản xác minh hệ thống: `.\scripts\verify-all.ps1`.
 - [ ] Soạn thảo Pull Request tuân thủ mẫu tại [`docs/14-team-workflow.md`](file:///c:/Use/University/PRN232/ASM/guideline/docs/14-team-workflow.md).
 - [ ] Gửi link PR cho người review chéo được phân công để phê duyệt.

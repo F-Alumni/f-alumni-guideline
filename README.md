@@ -196,7 +196,11 @@ Toàn bộ quy chuẩn và tài liệu kỹ thuật được đánh số thứ t
     - Quy chuẩn đặt tên Multi-Repository (`f-alumni-*`).
     - Chiến lược phân nhánh tinh gọn: `main`, `develop`, `feat/<ticket>-<name>`, `fix/<ticket>-<name>`.
     - Quy trình phối hợp thay đổi Hợp đồng API (Contract Change) và Mẫu Pull Request chuẩn.
-15. 🤝 [**Hướng dẫn Đóng góp Mã Nguồn (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
+15. 📦 [**Tài liệu 15 — Phân phối & Quản trị Hợp đồng Giao tiếp Microservices (Contract Distribution Standards)**](file:///c:/Use/University/PRN232/ASM/guideline/docs/15-contract-sharing.md):
+    - Giải quyết bài toán phân phối hợp đồng trong kiến trúc Multi-Repository mà không cần Private NuGet feed hay Git Submodule phức tạp.
+    - Cơ chế Snapshot kèm mã băm SHA-256 (`contracts.manifest.json`) đối chiếu nguồn gốc Git commit (Provenance).
+    - Quy tắc tiến hóa tương thích ngược cho Kafka Events và gRPC Protobuf.
+16. 🤝 [**Hướng dẫn Đóng góp Mã Nguồn (CONTRIBUTING.md)**](file:///c:/Use/University/PRN232/ASM/guideline/CONTRIBUTING.md):
     - Quy tắc chung dành cho thành viên khi đóng góp mã nguồn cho các repository trong tổ chức F-Alumni.
 
 ---
@@ -217,7 +221,7 @@ Trước khi gửi Pull Request hoặc bước vào buổi chấm thi, sinh viê
 
 ## 🛠️ 7. Bộ Kịch Bản Tự Động Hóa (Automation Scripts)
 
-Dự án cung cấp sẵn 3 kịch bản PowerShell giúp tối ưu hóa 100% thời gian khởi tạo và kiểm thử:
+Dự án cung cấp sẵn 5 kịch bản PowerShell giúp tối ưu hóa 100% thời gian khởi tạo, chia sẻ hợp đồng và kiểm thử:
 
 ### 1. Khởi tạo Microservice Mới (`scripts/bootstrap-service.ps1`)
 Sao chép mẫu chuẩn 3 tầng, tự động đổi tên toàn bộ namespace, project, solution và cấu hình kiểm thử In-Memory độc lập:
@@ -225,8 +229,20 @@ Sao chép mẫu chuẩn 3 tầng, tự động đổi tên toàn bộ namespace,
 .\scripts\bootstrap-service.ps1 -ServiceName "ForumService" -TargetDirectory "..\fpt-alumni-forum-service"
 ```
 
-### 2. Xác minh Toàn diện Hệ thống (`scripts/verify-all.ps1`)
-Biên dịch 5 solution, kiểm tra cấu hình tĩnh và chạy toàn bộ 54 ca kiểm thử tự động:
+### 2. Phân phối Hợp đồng Giao tiếp (`scripts/import-contracts.ps1`)
+Nhập khẩu hợp đồng gRPC Protobuf và schema Kafka Event từ guideline vào repository dịch vụ độc lập, tự động tạo manifest và băm mật mã SHA-256:
+```powershell
+.\scripts\import-contracts.ps1 -SourceGuidelinePath "." -TargetDirectory "..\fpt-alumni-chat-service" -ContractId "grpc/user-profile/v1"
+```
+
+### 3. Kiểm tra Tính toàn vẹn Hợp đồng Ngoại tuyến (`scripts/verify-contracts.ps1`)
+Kiểm toán độc lập không cần mạng Internet hay guideline repo; phát hiện tức thời hợp đồng bị sửa đổi cục bộ trái phép:
+```powershell
+.\scripts\verify-contracts.ps1 -Path "..\fpt-alumni-chat-service"
+```
+
+### 4. Xác minh Toàn diện Hệ thống (`scripts/verify-all.ps1`)
+Biên dịch 5 solution, kiểm tra cấu hình tĩnh và chạy toàn bộ các ca kiểm thử tự động:
 ```powershell
 # Chạy toàn bộ kiểm tra:
 .\scripts\verify-all.ps1
@@ -235,7 +251,7 @@ Biên dịch 5 solution, kiểm tra cấu hình tĩnh và chạy toàn bộ 54 c
 .\scripts\verify-all.ps1 -SkipTests
 ```
 
-### 3. Kiểm thử Khói Tích Hợp (`scripts/smoke-test.ps1`)
+### 5. Kiểm thử Khói Tích Hợp (`scripts/smoke-test.ps1`)
 Kiểm tra luồng kết nối end-to-end `Gateway -> Chat REST -> User gRPC` và `Kafka -> Notification Worker`:
 ```powershell
 .\scripts\smoke-test.ps1

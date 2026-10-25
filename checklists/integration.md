@@ -22,8 +22,10 @@
 
 ## ⚡ 2. Giao Tiếp Đồng Bộ gRPC (Chat Service $\rightarrow$ User Service)
 
-- [ ] **Hợp đồng Protobuf Chuẩn Hóa**:
+- [ ] **Hợp đồng Protobuf Chuẩn Hóa & Toàn Vẹn**:
   - [ ] Sử dụng đúng hợp đồng mẫu tại [`contracts/grpc/user-profile/v1/user_profile.proto`](file:///c:/Use/University/PRN232/ASM/guideline/contracts/grpc/user-profile/v1/user_profile.proto).
+  - [ ] Hợp đồng được nhập khẩu qua `scripts/import-contracts.ps1` và kiểm tra toàn vẹn bằng `scripts/verify-contracts.ps1` (100% `[PASS]`).
+  - [ ] Không có đường dẫn tương đối xuyên repository (`..\..\..\..\contracts`) trỏ ra ngoài; file `.csproj` chỉ trỏ hợp đồng cục bộ (Xem [`docs/15-contract-sharing.md`](file:///c:/Use/University/PRN232/ASM/guideline/docs/15-contract-sharing.md)).
   - [ ] Không tự ý thêm trường bắt buộc phá vỡ tính tương thích ngược (Backward Compatibility).
 - [ ] **Bảo Toàn Giao Thức HTTP/2 Binary**:
   - [ ] User Service Kestrel cấu hình rõ ràng giao thức `Http2` cho cổng gRPC (`50051`).
@@ -37,8 +39,9 @@
 
 ## 📬 3. Sự Kiện Bất Đồng Bộ Qua Apache Kafka
 
-- [ ] **Cấu Trúc JSON Event Envelope Chuẩn**:
+- [ ] **Cấu Trúc JSON Event Envelope Chuẩn & Toàn Vẹn**:
   - [ ] Sự kiện tuân thủ schema tại [`contracts/events/user-registered-v1.json`](file:///c:/Use/University/PRN232/ASM/guideline/contracts/events/user-registered-v1.json).
+  - [ ] Hợp đồng sự kiện và POCO C# được nhập khẩu bằng `scripts/import-contracts.ps1` và xác minh toàn vẹn bằng `scripts/verify-contracts.ps1` (100% `[PASS]`).
   - [ ] Có đầy đủ 7 trường envelope: `eventId`, `eventType` (`user.registered.v1`), `version`, `occurredAt`, `correlationId`, `producer`, `data`.
 - [ ] **Quy Chuẩn Topic & Khóa Phân Vùng (Partition Key)**:
   - [ ] Tên topic theo quy ước kebab-case: `falumni.users.v1.registered`.

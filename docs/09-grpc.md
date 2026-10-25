@@ -225,11 +225,41 @@ Invoke-RestMethod -Uri "http://localhost:50052/api/v1/chats/conversations/999999
 
 ---
 
-## 📋 7. Danh mục Kiểm tra Khi Lập trình với gRPC (Developer Checklist)
+## 📦 7. Phân phối & Quản trị Hợp đồng gRPC trong Multi-Repo (Contract Distribution)
+
+Trong mô hình multi-repo, Chat Service tuyệt đối **không** dùng relative path trỏ sang repository khác (`..\..\..\..\contracts\`). Thay vào đó, hợp đồng Protobuf được phân phối bằng script tự động vào cây thư mục của service:
+
+```powershell
+# Nhập khẩu hợp đồng gRPC user-profile v1 vào Chat Service
+..\f-alumni-guideline\scripts\import-contracts.ps1 `
+    -SourceGuidelinePath "..\f-alumni-guideline" `
+    -TargetDirectory "." `
+    -ContractId "grpc/user-profile/v1"
+
+# Kiểm tra tính toàn vẹn ngoại tuyến
+.\scripts\verify-contracts.ps1
+```
+
+Trong file `.csproj` của Chat Service, cấu hình gRPC Client độc lập với các gói `Google.Protobuf`, `Grpc.Net.Client`, `Grpc.Tools`:
+```xml
+<ItemGroup>
+  <Protobuf Include="..\..\contracts\grpc\user-profile\v1\user_profile.proto" GrpcServices="Client">
+    <Link>Protos\user_profile.proto</Link>
+  </Protobuf>
+</ItemGroup>
+```
+
+> [!TIP]
+> Xem chi tiết hướng dẫn quản lý bản kê `contracts.manifest.json`, quy tắc bất biến số thứ tự tag (Field Tag Immutability) và quy trình điều phối giữa BE1 và BE3 tại [Tài liệu 15 — Phân phối & Quản trị Hợp đồng Giao tiếp Microservices](file:///c:/Use/University/PRN232/ASM/guideline/docs/15-contract-sharing.md).
+
+---
+
+## 📋 8. Danh mục Kiểm tra Khi Lập trình với gRPC (Developer Checklist)
 
 Trước khi gửi Pull Request cho phần tích hợp gRPC giữa Chat và User Service:
 
-- [x] **Có dùng file proto phiên bản hóa không?** Luôn tham chiếu contract từ `contracts/grpc/user-profile/v1/user_profile.proto`.
+- [x] **Có nhập khẩu hợp đồng chuẩn không?** Hợp đồng Protobuf được nhập khẩu từ guideline bằng `scripts/import-contracts.ps1` và xác minh bằng `scripts/verify-contracts.ps1`.
+- [x] **Có dùng file proto phiên bản hóa không?** Luôn tham chiếu contract từ `contracts/grpc/user-profile/v1/user_profile.proto` cục bộ của service.
 - [x] **Có cô lập hoàn toàn không?** Chat Service không được tham chiếu project, class hay repository của User Service.
 - [x] **Có cấu hình Deadline không?** Mọi cuộc gọi gRPC phải truyền `deadline: DateTime.UtcNow.AddSeconds(...)`.
 - [x] **Có bắt ngoại lệ `RpcException` không?** Xử lý rõ ràng các trường hợp `NotFound` (404), `Unavailable` (503), và `DeadlineExceeded` (504).

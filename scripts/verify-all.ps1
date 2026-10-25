@@ -174,7 +174,8 @@ $RequiredDocs = @(
     "11-api-gateway.md",
     "12-docker.md",
     "13-testing.md",
-    "14-team-workflow.md"
+    "14-team-workflow.md",
+    "15-contract-sharing.md"
 )
 
 foreach ($DocName in $RequiredDocs) {
@@ -201,6 +202,25 @@ foreach ($CheckName in $RequiredChecklists) {
     }
     else {
         Record-Check "Checklists" "Checklist checklists/$CheckName ton tai" "FAIL" "Thieu tep checklists/$CheckName"
+    }
+}
+
+# 1.6. Kiem tra danh muc scripts/ tu dong hoa
+$RequiredScripts = @(
+    "bootstrap-service.ps1",
+    "verify-all.ps1",
+    "smoke-test.ps1",
+    "import-contracts.ps1",
+    "verify-contracts.ps1"
+)
+
+foreach ($ScriptName in $RequiredScripts) {
+    $ScriptPath = Join-Path $RepoRoot "scripts\$ScriptName"
+    if (Test-Path $ScriptPath) {
+        Record-Check "Scripts" "Kich ban scripts/$ScriptName ton tai" "PASS" "Co mat"
+    }
+    else {
+        Record-Check "Scripts" "Kich ban scripts/$ScriptName ton tai" "FAIL" "Thieu tep scripts/$ScriptName"
     }
 }
 

@@ -171,6 +171,26 @@ sequenceDiagram
     Note over DevA,DevB: Sau khi Service B đã chuyển đổi xong xuôi mới xóa trường cũ
 ```
 
+### 6.3 Quy chuẩn Phân phối & Kiểm soát Tính Toàn vẹn Hợp đồng:
+
+Để loại bỏ hoàn toàn việc gãy vỡ do tham chiếu đường dẫn tương đối xuyên repository (`..\..\contracts\`) trong mô hình multi-repo, nhóm chuẩn hóa cơ chế quản trị hợp đồng:
+
+1. **SSOT tại Guideline Repo**: Mọi thay đổi hợp đồng gRPC Protobuf và schema Kafka Event BẮT BUỘC phải mở PR và được merge vào `f-alumni-guideline` trước.
+2. **Nhập khẩu tự động qua script**: Các repo microservice tiêu thụ hợp đồng thông qua script phân phối chuẩn:
+   ```powershell
+   # Nhập khẩu hợp đồng và tự động sinh contracts.manifest.json kèm mã băm SHA-256
+   ..\f-alumni-guideline\scripts\import-contracts.ps1 -SourceGuidelinePath "..\f-alumni-guideline" -TargetDirectory "." -ContractId all
+   ```
+3. **Kiểm tra tính toàn vẹn (Integrity Check) trước khi mở PR**:
+   ```powershell
+   # Xác minh rằng tất cả hợp đồng cục bộ trùng khớp 100% với bản phát hành gốc
+   .\scripts\verify-contracts.ps1
+   ```
+4. **Không bao giờ sửa trực tiếp file hợp đồng tại repo của service**: Bất kỳ hành vi sửa file `.proto` hay schema `.json` cục bộ sẽ bị `verify-contracts.ps1` phát hiện là `[MODIFIED]` và làm fail pipeline kiểm tra.
+
+> [!TIP]
+> Xem hướng dẫn chi tiết về cấu trúc `contracts.manifest.json`, quy tắc bất biến số thứ tự tag Protobuf và chiến lược dual-publishing tại [Tài liệu 15 — Phân phối & Quản trị Hợp đồng Giao tiếp Microservices](file:///c:/Use/University/PRN232/ASM/guideline/docs/15-contract-sharing.md).
+
 > [!CAUTION]
 > **Quy định kỷ luật nhóm**:
 > Nghiêm cấm việc tự ý sửa API hoặc Proto file trên `develop` mà không thông báo trước cho người đang gọi API đó. Mọi PR có nguy cơ gây breaking change phải gắn nhãn `breaking-change` và tag người liên quan vào review.

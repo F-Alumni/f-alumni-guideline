@@ -354,10 +354,31 @@ Consumer Group:    notification-worker.user-registered-group
 
 ---
 
-## 📋 8. Danh mục Kiểm tra Khi Lập trình với Kafka (Developer Checklist)
+## 📦 8. Phân phối & Quản trị Hợp đồng Sự kiện (Contract Distribution)
+
+Trong môi trường multi-repository của dự án FPT Alumni Connect, các service phát sinh (Producer) và tiêu thụ (Consumer) sự kiện không chia sẻ chung project mã nguồn. Thay vào đó, hợp đồng sự kiện Kafka và phong bì `EventEnvelope` được phân phối theo mô hình snapshot cục bộ có băm SHA-256 từ repository guideline:
+
+```powershell
+# Nhập khẩu hợp đồng sự kiện Kafka user.registered.v1 vào repository dịch vụ
+..\f-alumni-guideline\scripts\import-contracts.ps1 `
+    -SourceGuidelinePath "..\f-alumni-guideline" `
+    -TargetDirectory "." `
+    -ContractId "events/user-registered/v1"
+
+# Xác minh tính toàn vẹn ngoại tuyến
+.\scripts\verify-contracts.ps1
+```
+
+> [!TIP]
+> Xem chi tiết hướng dẫn quản lý bản kê `contracts.manifest.json`, quy tắc tiến hóa tương thích ngược (Backward Compatibility) và quy trình phối hợp nhóm tại [Tài liệu 15 — Phân phối & Quản trị Hợp đồng Giao tiếp Microservices](file:///c:/Use/University/PRN232/ASM/guideline/docs/15-contract-sharing.md).
+
+---
+
+## 📋 9. Danh mục Kiểm tra Khi Lập trình với Kafka (Developer Checklist)
 
 Trước khi mở Pull Request có chứa mã nguồn Kafka Producer hoặc Consumer, hãy kiểm tra danh sách sau:
 
+- [x] **Có nhập khẩu hợp đồng chuẩn không?** Hợp đồng sự kiện và `EventEnvelope` được nhập khẩu từ guideline bằng `scripts/import-contracts.ps1` và xác minh bằng `scripts/verify-contracts.ps1`.
 - [x] **Có dùng EventEnvelope không?** Mọi sự kiện phát đi phải bọc trong `EventEnvelope<T>` chứa đầy đủ `eventId`, `eventType`, `version`, `occurredAt`, `correlationId`, `producer`.
 - [x] **Có chỉ định Partition Key không?** Producer phải truyền `Key = EntityId.ToString()` để đảm bảo thứ tự sự kiện trên cùng một đối tượng.
 - [x] **Có tắt Auto-Commit không?** Consumer phải thiết lập `EnableAutoCommit = false` và gọi `consumer.Commit()` sau khi xử lý thành công.
